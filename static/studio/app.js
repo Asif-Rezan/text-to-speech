@@ -79,7 +79,7 @@
       bar.style.width = `${value}%`; percent.textContent = `${value}%`; elapsedLabel.textContent = `${elapsed}s elapsed`;
       const stage = value < 34 ? 0 : value < 78 ? 1 : 2;
       steps.forEach((step, index) => step.classList.toggle('active', index <= stage));
-      message.textContent = ['Analyzing text and pronunciation…', 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
+      message.textContent = ['Preparing voice model and script…', 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
     }, 1000);
   }
 

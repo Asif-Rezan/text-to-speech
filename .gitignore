@@ -7,3 +7,4 @@ media/audio/
 staticfiles/
 *.sqlite3-journal
 models/piper/*.onnx
+models/piper/*.onnx.part

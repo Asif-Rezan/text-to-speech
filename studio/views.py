@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .forms import SpeechForm
 from .models import SpeechGeneration
-from .services import VOICES, all_models_available, synthesize
+from .services import VOICES, model_configs_available, synthesize
 
 
 @require_http_methods(['GET', 'POST'])
@@ -67,5 +67,5 @@ def delete(request, public_id):
 
 @require_GET
 def health(request):
-    ready = all_models_available()
-    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Neural Voice Studio', 'engine': 'piper', 'models_ready': ready, 'voice_count': len(VOICES)}, status=200 if ready else 503)
+    ready = model_configs_available()
+    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Neural Voice Studio', 'engine': 'piper', 'model_source': settings.PIPER_MODEL_BASE_URL, 'voice_count': len(VOICES)}, status=200 if ready else 503)

@@ -125,6 +125,10 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 PIPER_MODEL_DIR = Path(os.environ.get('PIPER_MODEL_DIR', BASE_DIR / 'models' / 'piper'))
+PIPER_MODEL_BASE_URL = os.environ.get(
+    'PIPER_MODEL_BASE_URL',
+    'https://github.com/Asif-Rezan/text-to-speech/releases/latest/download',
+).rstrip('/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024

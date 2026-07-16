@@ -7,12 +7,11 @@ A self-hosted Django text-to-speech studio powered by Piper. Sixteen voices—in
 ```powershell
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m piper.download_voices --data-dir models\piper en_US-ljspeech-medium en_US-hfc_male-medium en_US-amy-medium en_US-lessac-high en_US-kristin-medium en_US-ryan-high en_US-joe-medium en_US-bryce-medium en_GB-alba-medium es_ES-davefx-medium fr_FR-siwis-medium de_DE-thorsten-medium hi_IN-pratham-medium hi_IN-priyamvada-medium pt_BR-faber-medium zh_CN-huayan-medium
 python manage.py migrate
 python manage.py runserver
 ```
 
-Each voice must have both its `.onnx` and `.onnx.json` files in `models/piper/`. Override that directory with `PIPER_MODEL_DIR` if needed. Models are loaded on first use and cached for subsequent requests.
+Large `.onnx` files are not stored in the repository. On first use, the selected voice is downloaded atomically from the configured GitHub release and cached in `models/piper/`; subsequent generations are fully local. The small `.onnx.json` configuration files remain versioned. Override the cache with `PIPER_MODEL_DIR` or the release base with `PIPER_MODEL_BASE_URL`.
 
 Scripts may contain up to 20,000 characters. Long scripts are split at natural sentence/paragraph boundaries, synthesized in bounded local segments, and merged losslessly into one downloadable WAV file.
 

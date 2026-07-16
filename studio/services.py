@@ -1,6 +1,9 @@
 import re
+import shutil
 import tempfile
 import threading
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 import wave
 from pathlib import Path
 
@@ -34,6 +37,7 @@ VOICES = [
 _voices = {}
 _load_lock = threading.Lock()
 _synthesis_lock = threading.Lock()
+_download_lock = threading.Lock()
 
 
 class TTSUnavailable(RuntimeError):
@@ -53,14 +57,46 @@ def all_models_available():
     return all(model_available(voice) for voice, _label in VOICES)
 
 
+def model_configs_available():
+    return all(model_path(voice).with_suffix('.onnx.json').is_file() for voice, _label in VOICES)
+
+
+def ensure_model(voice_name):
+    """Atomically download a missing ONNX model from the configured release."""
+    path = model_path(voice_name)
+    config_path = path.with_suffix('.onnx.json')
+    if not config_path.is_file():
+        raise TTSUnavailable(f'Piper configuration is missing for {voice_name}.')
+    if path.is_file():
+        return path
+    with _download_lock:
+        if path.is_file():
+            return path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        partial = path.with_suffix('.onnx.part')
+        url = f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
+        request = Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'})
+        try:
+            with urlopen(request, timeout=60) as response, open(partial, 'wb') as destination:
+                shutil.copyfileobj(response, destination, length=1024 * 1024)
+            if partial.stat().st_size < 10 * 1024 * 1024:
+                raise TTSUnavailable(f'Downloaded model {voice_name} is unexpectedly small.')
+            partial.replace(path)
+        except (HTTPError, URLError, OSError) as exc:
+            partial.unlink(missing_ok=True)
+            raise TTSUnavailable(f'Could not download {voice_name} from the model release: {exc}') from exc
+        except Exception:
+            partial.unlink(missing_ok=True)
+            raise
+    return path
+
+
 def _get_voice(voice_name):
     try:
         from piper import PiperVoice
     except (ImportError, OSError) as exc:
         raise TTSUnavailable('Piper is not installed. Run: pip install -r requirements.txt') from exc
-    path = model_path(voice_name)
-    if not model_available(voice_name):
-        raise TTSUnavailable(f'Piper voice {voice_name} is missing. Run the voice download command in README.md.')
+    path = ensure_model(voice_name)
     with _load_lock:
         if voice_name not in _voices:
             _voices[voice_name] = PiperVoice.load(str(path))
