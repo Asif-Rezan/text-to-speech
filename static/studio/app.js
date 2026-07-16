@@ -17,7 +17,7 @@
   const steps = [...overlay.querySelectorAll('.progress-steps span')];
   const samples = [
     'Great stories do more than fill the silence. They give every pause a purpose, every sentence a rhythm, and every idea a voice worth remembering.',
-    'Welcome to private neural speech. Piper transforms your words into clear, expressive audio locally and beautifully.'
+    'Welcome to natural text to speech. Transform your words into clear, expressive audio quickly and beautifully.'
   ];
   let timer;
 

@@ -8,4 +8,6 @@ urlpatterns = [
     path('audio/<uuid:public_id>/download/', views.download, name='download'),
     path('audio/<uuid:public_id>/delete/', views.delete, name='delete'),
     path('health/', views.health, name='health'),
+    path('robots.txt', views.robots, name='robots'),
+    path('sitemap.xml', views.sitemap, name='sitemap'),
 ]

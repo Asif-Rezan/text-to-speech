@@ -10,10 +10,26 @@ from .services import split_text
 
 class StudioTests(TestCase):
     def test_home_and_health(self):
-        self.assertContains(self.client.get(reverse('studio:home')), 'Neural Voice Studio')
+        home = self.client.get(reverse('studio:home'))
+        self.assertContains(home, 'Free Text to Speech Online')
+        self.assertContains(home, 'FAQPage')
         health = self.client.get(reverse('studio:health'))
         self.assertEqual(health.status_code, 200)
-        self.assertEqual(health.json()['engine'], 'piper')
+        self.assertNotIn('engine', health.json())
+
+    @override_settings(PUBLIC_SITE_URL='https://voice.example.com')
+    def test_search_engine_files(self):
+        robots = self.client.get(reverse('studio:robots'))
+        self.assertContains(robots, 'Sitemap: https://voice.example.com/sitemap.xml')
+        sitemap = self.client.get(reverse('studio:sitemap'))
+        self.assertEqual(sitemap['Content-Type'], 'application/xml')
+        self.assertContains(sitemap, '<loc>https://voice.example.com/</loc>')
+
+    def test_home_shows_only_three_latest_generations(self):
+        for index in range(5):
+            SpeechGeneration.objects.create(title=f'Project {index}', text=f'Audio text {index}', status='failed')
+        response = self.client.get(reverse('studio:home'))
+        self.assertEqual(response.content.count(b'data-generation-id='), 3)
 
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     @patch('studio.views.synthesize', return_value=2.5)

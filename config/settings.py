@@ -129,6 +129,7 @@ PIPER_MODEL_BASE_URL = os.environ.get(
     'PIPER_MODEL_BASE_URL',
     'https://github.com/Asif-Rezan/text-to-speech/releases/latest/download',
 ).rstrip('/')
+PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'http://127.0.0.1:8000').rstrip('/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024

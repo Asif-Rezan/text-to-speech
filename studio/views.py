@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -43,8 +43,8 @@ def studio(request):
         return redirect('studio:home')
     if request.method == 'POST' and wants_json:
         return JsonResponse({'ok': False, 'message': 'Please correct the highlighted fields.', 'errors': form.errors.get_json_data()}, status=422)
-    history = SpeechGeneration.objects.all()[:12]
-    return render(request, 'studio/home.html', {'form': form, 'history': history})
+    history = SpeechGeneration.objects.all()[:3]
+    return render(request, 'studio/home.html', {'form': form, 'history': history, 'site_url': settings.PUBLIC_SITE_URL})
 
 
 @require_GET
@@ -68,4 +68,19 @@ def delete(request, public_id):
 @require_GET
 def health(request):
     ready = model_configs_available()
-    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Neural Voice Studio', 'engine': 'piper', 'model_source': settings.PIPER_MODEL_BASE_URL, 'voice_count': len(VOICES)}, status=200 if ready else 503)
+    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Free Text to Speech', 'voice_count': len(VOICES)}, status=200 if ready else 503)
+
+
+@require_GET
+def robots(request):
+    content = f'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /audio/\nSitemap: {settings.PUBLIC_SITE_URL}/sitemap.xml\n'
+    return HttpResponse(content, content_type='text/plain')
+
+
+@require_GET
+def sitemap(request):
+    content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{settings.PUBLIC_SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+</urlset>'''
+    return HttpResponse(content, content_type='application/xml')

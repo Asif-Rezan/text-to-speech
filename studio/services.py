@@ -66,7 +66,7 @@ def ensure_model(voice_name):
     path = model_path(voice_name)
     config_path = path.with_suffix('.onnx.json')
     if not config_path.is_file():
-        raise TTSUnavailable(f'Piper configuration is missing for {voice_name}.')
+        raise TTSUnavailable(f'Voice configuration is missing for {voice_name}.')
     if path.is_file():
         return path
     with _download_lock:
@@ -95,7 +95,7 @@ def _get_voice(voice_name):
     try:
         from piper import PiperVoice
     except (ImportError, OSError) as exc:
-        raise TTSUnavailable('Piper is not installed. Run: pip install -r requirements.txt') from exc
+        raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     path = ensure_model(voice_name)
     with _load_lock:
         if voice_name not in _voices:
@@ -150,7 +150,7 @@ def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
     try:
         from piper.config import SynthesisConfig
     except (ImportError, OSError) as exc:
-        raise TTSUnavailable('Piper is not installed. Run: pip install -r requirements.txt') from exc
+        raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     output_path = Path(output_path).with_suffix('.wav')
     output_path.parent.mkdir(parents=True, exist_ok=True)
     config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True)
@@ -174,4 +174,4 @@ def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
         raise
     except Exception as exc:
         output_path.unlink(missing_ok=True)
-        raise TTSUnavailable(f'Piper synthesis error: {exc}') from exc
+        raise TTSUnavailable(f'Audio generation failed: {exc}') from exc
