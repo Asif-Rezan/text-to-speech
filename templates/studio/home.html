@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="{% static 'studio/validation.css' %}">
   <link rel="stylesheet" href="{% static 'studio/seo.css' %}">
   <link rel="stylesheet" href="{% static 'studio/ui-v2.css' %}">
+  <link rel="stylesheet" href="{% static 'studio/download.css' %}">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"NeuralVoice Free Text to Speech","url":"{{ site_url }}/","applicationCategory":"MultimediaApplication","operatingSystem":"Any","description":"Free online text to speech and AI voice generator with 16 voices across 8 languages.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Free text to speech","16 natural voices","8 language locales","20,000 character scripts","WAV audio download"]}
   </script>
@@ -68,7 +69,6 @@
 
     <section class="container studio-section" id="studio">
       {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}
-      <div class="studio-kicker"><span class="live-dot"></span><span>Voice studio</span><small>No signup required</small></div>
       <div class="studio-shell">
         <form method="post" id="speechForm" novalidate>{% csrf_token %}
           <div class="row g-0">

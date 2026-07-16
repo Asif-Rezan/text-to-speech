@@ -50,6 +50,9 @@ class StudioTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()['ok'])
         self.assertIn('<audio', response.json()['card_html'])
+        self.assertIn('preload="metadata"', response.json()['card_html'])
+        self.assertIn('Download WAV', response.json()['card_html'])
+        self.assertIn('3 sec', response.json()['card_html'])
 
     def test_rejects_mismatched_voice(self):
         self.client.post(reverse('studio:home'), {'text': 'Hello', 'language': 'en_GB', 'voice': 'en_US-ljspeech-medium', 'speed': '1', 'format': 'wav'})
@@ -71,6 +74,10 @@ class StudioTests(TestCase):
         self.assertGreater(len(chunks), 1)
         self.assertTrue(all(0 < len(chunk) <= 500 for chunk in chunks))
         self.assertEqual(' '.join(chunks).split(), text.split())
+
+    def test_duration_is_formatted_as_minutes_and_seconds(self):
+        item = SpeechGeneration(duration_seconds=125.7)
+        self.assertEqual(item.duration_label, '2 min 6 sec')
 
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     @patch('studio.views.synthesize', return_value=180.0)

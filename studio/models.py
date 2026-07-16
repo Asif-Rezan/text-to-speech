@@ -32,3 +32,13 @@ class SpeechGeneration(models.Model):
     @property
     def display_title(self):
         return self.title or self.text[:48] + ('…' if len(self.text) > 48 else '')
+
+    @property
+    def duration_label(self):
+        if self.duration_seconds is None:
+            return ''
+        total_seconds = max(0, int(float(self.duration_seconds) + 0.5))
+        minutes, seconds = divmod(total_seconds, 60)
+        if minutes:
+            return f'{minutes} min {seconds} sec'
+        return f'{seconds} sec'
