@@ -25,11 +25,11 @@ class StudioTests(TestCase):
         self.assertEqual(sitemap['Content-Type'], 'application/xml')
         self.assertContains(sitemap, '<loc>https://voice.example.com/</loc>')
 
-    def test_home_shows_only_three_latest_generations(self):
-        for index in range(5):
+    def test_home_shows_only_six_latest_generations(self):
+        for index in range(8):
             SpeechGeneration.objects.create(title=f'Project {index}', text=f'Audio text {index}', status='failed')
         response = self.client.get(reverse('studio:home'))
-        self.assertEqual(response.content.count(b'data-generation-id='), 3)
+        self.assertEqual(response.content.count(b'data-generation-id='), 6)
 
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     @patch('studio.views.synthesize', return_value=2.5)

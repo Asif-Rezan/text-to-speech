@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="{% static 'studio/progress.css' %}">
   <link rel="stylesheet" href="{% static 'studio/validation.css' %}">
   <link rel="stylesheet" href="{% static 'studio/seo.css' %}">
+  <link rel="stylesheet" href="{% static 'studio/ui-v2.css' %}">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"NeuralVoice Free Text to Speech","url":"{{ site_url }}/","applicationCategory":"MultimediaApplication","operatingSystem":"Any","description":"Free online text to speech and AI voice generator with 16 voices across 8 languages.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Free text to speech","16 natural voices","8 language locales","20,000 character scripts","WAV audio download"]}
   </script>
@@ -44,6 +45,9 @@
         <span class="logo-mark"><i></i><i></i><i></i><i></i></span>
         <span>Neural<span class="text-gradient">Voice</span></span>
       </a>
+      <div class="nav-links d-none d-lg-flex align-items-center gap-4">
+        <a href="#studio">Create audio</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a>
+      </div>
       <div class="d-flex align-items-center gap-3">
         <span class="status-pill"><span></span> Free text to speech</span>
         <a href="#studio" class="btn btn-sm btn-ghost d-none d-sm-inline-flex">Open studio</a>
@@ -56,6 +60,7 @@
       <div class="eyebrow">FREE ONLINE AI VOICE GENERATOR</div>
       <h1>Free text to speech, <span class="text-gradient">made beautifully.</span></h1>
       <p class="hero-copy mx-auto">Convert text to natural-sounding voice online. Choose from 16 voices in 8 languages, create long-form audio, and download one high-quality WAV file.</p>
+      <div class="hero-actions"><a class="primary-cta" href="#studio">Create free audio <span>→</span></a><a class="secondary-cta" href="#how-it-works">See how it works</a></div>
       <div class="d-flex justify-content-center gap-4 hero-stats">
         <span><strong>16</strong> voices</span><span><strong>8</strong> languages</span><span><strong>Zero</strong> API fees</span>
       </div>
@@ -63,13 +68,14 @@
 
     <section class="container studio-section" id="studio">
       {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}
+      <div class="studio-kicker"><span class="live-dot"></span><span>Voice studio</span><small>No signup required</small></div>
       <div class="studio-shell">
         <form method="post" id="speechForm" novalidate>{% csrf_token %}
           <div class="row g-0">
             <div class="col-lg-8 editor-pane">
               <div class="pane-heading d-flex align-items-center justify-content-between">
                 <div><span class="step">01</span><h2>Your script</h2></div>
-                <span class="counter"><span id="charCount">0</span> / 20,000</span>
+                <span class="counter"><span id="charCount">0</span> / 20,000 characters</span>
               </div>
               <div class="title-wrap">{{ form.title }}</div>
               {{ form.text }}
@@ -80,7 +86,7 @@
               </div>
             </div>
             <div class="col-lg-4 controls-pane">
-              <div class="pane-heading"><div><span class="step">02</span><h2>Voice settings</h2></div></div>
+              <div class="pane-heading"><div><span class="step">02</span><h2>Voice settings</h2></div><p class="pane-help">Fine-tune how your audio sounds.</p></div>
               <label for="id_language">Language</label>{{ form.language }}
               <label for="id_voice">Voice</label>{{ form.voice }}
               <div class="field-error client-field-error" data-error-for="language">{% for error in form.language.errors %}{{ error }}{% endfor %}</div>
@@ -100,7 +106,7 @@
     </section>
 
     <section class="container history-section{% if not history %} d-none{% endif %}" id="historySection">
-      <div class="section-title"><div><span class="eyebrow">READY TO PLAY</span><h2>Your latest audio</h2></div><span>Showing up to 3</span></div>
+      <div class="section-title"><div><span class="eyebrow">READY TO PLAY</span><h2>Your latest audio</h2></div><span>Showing up to 6</span></div>
       <div class="history-grid" id="historyGrid">
       {% for item in history %}{% include 'studio/_audio_card.html' with item=item %}{% endfor %}
       </div>
@@ -115,7 +121,7 @@
     <section class="container seo-content" aria-labelledby="how-it-works">
       <div class="seo-intro text-center"><span class="eyebrow">SIMPLE TEXT TO VOICE</span><h2 id="how-it-works">How to convert text to speech</h2><p>Make narration, accessibility audio, study material, podcast drafts, presentation voiceovers, and video scripts in three simple steps.</p></div>
       <div class="how-grid"><article><b>1</b><h3>Paste your text</h3><p>Enter anything from a short message to a 20,000-character article or narration.</p></article><article><b>2</b><h3>Choose an AI voice</h3><p>Select a language, voice, and speaking speed that fits your content.</p></article><article><b>3</b><h3>Generate and download</h3><p>Preview your text-to-audio result and download it as one WAV file.</p></article></div>
-      <div class="faq-wrap"><span class="eyebrow">COMMON QUESTIONS</span><h2>Free text-to-speech FAQ</h2>
+      <div class="faq-wrap" id="faq"><span class="eyebrow">COMMON QUESTIONS</span><h2>Free text-to-speech FAQ</h2>
         <details><summary>How can I convert text to speech for free?</summary><p>Paste your script into the editor, select a language and voice, adjust the pace, and click Generate speech. When processing finishes, play or download your audio.</p></details>
         <details><summary>How much text can I turn into voice?</summary><p>You can convert up to 20,000 characters at once. Longer scripts are intelligently divided and combined into one seamless WAV file.</p></details>
         <details><summary>What languages does the AI voice generator support?</summary><p>Available languages include US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, and Mandarin Chinese.</p></details>
@@ -134,7 +140,7 @@
       <div class="progress-steps"><span class="active">Analyze</span><span>Synthesize</span><span>Finalize</span></div>
     </div>
   </div>
-  <footer><div class="container d-flex justify-content-between"><span>NeuralVoice · Free text to speech</span><span>16 voices · 8 languages · WAV download</span></div></footer>
+  <footer><div class="container footer-inner"><div class="footer-brand"><span class="logo-mark"><i></i><i></i><i></i><i></i></span><strong>NeuralVoice</strong><small>Words deserve a great voice.</small></div><div class="footer-links"><a href="#studio">Create audio</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a></div><span class="footer-meta">16 voices · 8 languages · WAV</span></div></footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'studio/app.js' %}"></script>
 </body></html>
