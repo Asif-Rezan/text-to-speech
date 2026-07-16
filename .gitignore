@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+media/audio/
+staticfiles/
+*.sqlite3-journal
+models/piper/*.onnx
