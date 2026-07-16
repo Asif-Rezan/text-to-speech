@@ -13,13 +13,13 @@ services:
       - key: DJANGO_DEBUG
         value: "0"
       - key: DJANGO_ALLOWED_HOSTS
-        value: text-to-speech.onrender.com
+        value: text-to-speech-m5wr.onrender.com
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: https://text-to-speech.onrender.com
+        value: https://text-to-speech-m5wr.onrender.com
       - key: DJANGO_SECURE_SSL_REDIRECT
         value: "1"
       - key: PUBLIC_SITE_URL
-        value: https://text-to-speech.onrender.com
+        value: https://text-to-speech-m5wr.onrender.com
       - key: DATABASE_PATH
         value: /var/data/db.sqlite3
       - key: MEDIA_ROOT
