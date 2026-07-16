@@ -48,9 +48,13 @@ def model_path(voice):
     return Path(settings.PIPER_MODEL_DIR) / f'{voice}.onnx'
 
 
+def config_path(voice):
+    return Path(settings.PIPER_CONFIG_DIR) / f'{voice}.onnx.json'
+
+
 def model_available(voice='en_US-ljspeech-medium'):
     path = model_path(voice)
-    return path.is_file() and path.with_suffix('.onnx.json').is_file()
+    return path.is_file() and config_path(voice).is_file()
 
 
 def all_models_available():
@@ -58,14 +62,14 @@ def all_models_available():
 
 
 def model_configs_available():
-    return all(model_path(voice).with_suffix('.onnx.json').is_file() for voice, _label in VOICES)
+    return all(config_path(voice).is_file() for voice, _label in VOICES)
 
 
 def ensure_model(voice_name):
     """Atomically download a missing ONNX model from the configured release."""
     path = model_path(voice_name)
-    config_path = path.with_suffix('.onnx.json')
-    if not config_path.is_file():
+    voice_config = config_path(voice_name)
+    if not voice_config.is_file():
         raise TTSUnavailable(f'Voice configuration is missing for {voice_name}.')
     if path.is_file():
         return path
@@ -99,7 +103,7 @@ def _get_voice(voice_name):
     path = ensure_model(voice_name)
     with _load_lock:
         if voice_name not in _voices:
-            _voices[voice_name] = PiperVoice.load(str(path))
+            _voices[voice_name] = PiperVoice.load(str(path), config_path=str(config_path(voice_name)))
     return _voices[voice_name]
 
 

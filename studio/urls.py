@@ -6,6 +6,7 @@ app_name = 'studio'
 urlpatterns = [
     path('', views.studio, name='home'),
     path('audio/<uuid:public_id>/download/', views.download, name='download'),
+    path('audio/<uuid:public_id>/stream/', views.stream, name='stream'),
     path('audio/<uuid:public_id>/delete/', views.delete, name='delete'),
     path('health/', views.health, name='health'),
     path('robots.txt', views.robots, name='robots'),

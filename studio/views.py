@@ -55,6 +55,18 @@ def download(request, public_id):
     return FileResponse(open(item.audio_file.path, 'rb'), as_attachment=True, filename=f'{item.display_title[:50]}.{item.format}')
 
 
+@require_GET
+def stream(request, public_id):
+    """Serve generated media in production, where Django's debug media route is disabled."""
+    item = get_object_or_404(SpeechGeneration, public_id=public_id, status='completed')
+    if not item.audio_file or not Path(item.audio_file.path).is_file():
+        raise Http404('Audio file not found')
+    response = FileResponse(open(item.audio_file.path, 'rb'), content_type='audio/wav')
+    response['Content-Disposition'] = f'inline; filename="{item.public_id}.{item.format}"'
+    response['Cache-Control'] = 'private, max-age=3600'
+    return response
+
+
 @require_POST
 def delete(request, public_id):
     item = get_object_or_404(SpeechGeneration, public_id=public_id)
