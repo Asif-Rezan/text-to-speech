@@ -15,6 +15,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+ON_VERCEL = os.environ.get('VERCEL') == '1'
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,6 +28,13 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-me-in-p
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+if ON_VERCEL:
+    ALLOWED_HOSTS.extend(filter(None, [
+        os.environ.get('VERCEL_URL'),
+        os.environ.get('VERCEL_PROJECT_PRODUCTION_URL'),
+        os.environ.get('VERCEL_BRANCH_URL'),
+        'text-to-speech-rezan2.vercel.app',
+    ]))
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
 
 
