@@ -101,11 +101,76 @@
     }, delay);
   }
 
+  // Keep temporary-server audio on this device, independent of Vercel instances.
+  const audioDb = new Promise((resolve, reject) => {
+    const request = indexedDB.open('neuralvoice-audio', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('clips', {keyPath: 'id'});
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  audioDb.catch(() => {});
+  function attachAudio(card, clip) {
+    const url = URL.createObjectURL(clip.blob);
+    const audio = card.querySelector('audio');
+    audio.src = url;
+    audio.load();
+    const download = card.querySelector('.download-btn');
+    download.href = url;
+    download.download = clip.filename;
+  }
+  async function receiveGeneration(response) {
+    if (!response.headers.get('content-type')?.includes('application/x-ndjson')) return response.json();
+    const reader = response.body.getReader(), decoder = new TextDecoder();
+    const parts = [];
+    let pending = '', data, complete = false;
+    while (true) {
+      const {value, done} = await reader.read();
+      pending += decoder.decode(value, {stream: !done});
+      let end;
+      while ((end = pending.indexOf('\n')) >= 0) {
+        const line = pending.slice(0, end); pending = pending.slice(end + 1);
+        if (!line) continue;
+        const packet = JSON.parse(line);
+        if (packet.audio) parts.push(Uint8Array.from(atob(packet.audio), c => c.charCodeAt(0)));
+        else if (packet.complete) complete = true;
+        else data = packet;
+      }
+      if (done) break;
+    }
+    if (!complete || !data || !parts.length) throw new Error('Audio transfer interrupted. Please generate again.');
+    data.clip = {id: data.id, filename: data.filename, card_html: data.card_html,
+      blob: new Blob(parts, {type: 'audio/wav'}), created: Date.now()};
+    return data;
+  }
+  async function restoreAudio() {
+    try {
+      const db = await audioDb;
+      const clips = await new Promise((resolve, reject) => {
+        const request = db.transaction('clips').objectStore('clips').getAll();
+        request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      });
+      const grid = document.querySelector('#historyGrid');
+      for (const clip of clips.sort((a, b) => a.created - b.created).slice(-6)) {
+        let card = grid.querySelector(`[data-generation-id="${CSS.escape(clip.id)}"]`);
+        if (!card) { grid.insertAdjacentHTML('afterbegin', clip.card_html); card = grid.firstElementChild; }
+        attachAudio(card, clip);
+        document.querySelector('#historySection').classList.remove('d-none');
+      }
+      bindDelete(grid);
+    } catch (_) { /* Playback in this tab still works when device storage is unavailable. */ }
+  }
+
   function bindDelete(scope = document) {
     scope.querySelectorAll('.delete-form:not([data-bound])').forEach(deleteForm => {
       deleteForm.dataset.bound = 'true';
       deleteForm.addEventListener('submit', event => {
-        if (!confirm('Delete this generation and its audio file?')) event.preventDefault();
+        if (!confirm('Delete this generation and its audio file?')) { event.preventDefault(); return; }
+        const card = deleteForm.closest('.audio-card');
+        if (card.querySelector('audio')?.src.startsWith('blob:')) {
+          event.preventDefault();
+          audioDb.then(db => db.transaction('clips', 'readwrite').objectStore('clips').delete(card.dataset.generationId)).catch(() => {});
+          URL.revokeObjectURL(card.querySelector('audio').src); card.remove();
+        }
       });
     });
   }
@@ -133,7 +198,7 @@
         method: 'POST', body: new FormData(form),
         headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
       });
-      const data = await response.json();
+      const data = await receiveGeneration(response);
       if (response.status === 422) {
         const validation = showErrors(data.errors);
         throw Object.assign(new Error(validation.firstMessage || data.message), {validation});
@@ -142,6 +207,10 @@
       clearInterval(timer); bar.style.width = '100%'; percent.textContent = '100%'; message.textContent = 'Your audio is ready!'; steps.forEach(step => step.classList.add('active'));
       const grid = document.querySelector('#historyGrid');
       grid.insertAdjacentHTML('afterbegin', data.card_html);
+      if (data.clip) {
+        attachAudio(grid.firstElementChild, data.clip);
+        audioDb.then(db => db.transaction('clips', 'readwrite').objectStore('clips').put(data.clip)).catch(() => {});
+      }
       document.querySelector('#historySection').classList.remove('d-none');
       bindDelete(grid); hideProgress(850);
       setTimeout(() => grid.querySelector('.audio-card').scrollIntoView({behavior: 'smooth', block: 'center'}), 900);
@@ -158,5 +227,5 @@
     }
   });
 
-  bindDelete(); syncVoices(); update();
+  bindDelete(); syncVoices(); update(); restoreAudio();
 })();

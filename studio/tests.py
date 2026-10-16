@@ -1,3 +1,5 @@
+import base64
+import json
 import tempfile
 import array
 import wave
@@ -14,6 +16,26 @@ from .forms import SpeechForm
 
 
 class StudioTests(TestCase):
+    @override_settings(ON_VERCEL=True)
+    def test_vercel_delivers_audio_in_generation_response(self):
+        audio = b'RIFF' + bytes(range(256)) * 20000
+        def generate(text, voice, language, speed, output, fmt):
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(audio)
+            return 43.0
+        with tempfile.TemporaryDirectory() as folder, override_settings(MEDIA_ROOT=folder):
+            with patch('studio.views.synthesize', side_effect=generate):
+                response = self.client.post(reverse('studio:home'), {
+                    'text': 'চলুন একটি নতুন গল্প শুনি।', 'language': 'bn_BD',
+                    'voice': INDICVOICE_ID, 'speed': '1', 'format': 'wav',
+                }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                self.assertEqual(response.status_code, 201)
+                self.assertTrue(response.streaming)
+                packets = [json.loads(line) for line in b''.join(response.streaming_content).splitlines()]
+                self.assertTrue(packets[0]['ok'])
+                self.assertTrue(packets[-1]['complete'])
+                self.assertEqual(b''.join(base64.b64decode(p['audio']) for p in packets if 'audio' in p), audio)
+
     def test_indicvoice_is_additional_and_has_its_own_text_limit(self):
         from .services import VOICES
         self.assertEqual(len(VOICES), 21)

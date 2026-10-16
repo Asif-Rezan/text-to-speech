@@ -1,8 +1,10 @@
+import base64
+import json
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -34,12 +36,25 @@ def studio(request):
                 messages.error(request, item.error_message)
         if wants_json:
             status_code = 201 if item.status == 'completed' else 503
-            return JsonResponse({
+            payload = {
                 'ok': item.status == 'completed',
                 'status': item.status,
                 'message': 'Your audio is ready.' if item.status == 'completed' else item.error_message,
                 'card_html': render_to_string('studio/_audio_card.html', {'item': item}, request=request),
-            }, status=status_code)
+            }
+            if settings.ON_VERCEL and item.status == 'completed':
+                payload.update(id=str(item.public_id), filename=f'{item.display_title[:50]}.wav')
+                def chunks():
+                    yield json.dumps(payload) + '\n'
+                    # Deliver audio in the generation request: another instance cannot read /tmp.
+                    with output.open('rb') as source:
+                        while chunk := source.read(48 * 1024):
+                            yield json.dumps({'audio': base64.b64encode(chunk).decode('ascii')}) + '\n'
+                    yield '{"complete":true}\n'
+                response = StreamingHttpResponse(chunks(), status=201, content_type='application/x-ndjson')
+                response['Cache-Control'] = 'no-store'
+                return response
+            return JsonResponse(payload, status=status_code)
         return redirect('studio:home')
     if request.method == 'POST' and wants_json:
         return JsonResponse({'ok': False, 'message': 'Please correct the highlighted fields.', 'errors': form.errors.get_json_data()}, status=422)
