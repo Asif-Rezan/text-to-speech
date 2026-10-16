@@ -26,6 +26,6 @@ Piper voice models can carry independent dataset/model terms. Review the voice's
 
 - Client: [rany2/edge-tts](https://github.com/rany2/edge-tts), LGPLv3.
 - Audio decoder: [miniaudio](https://github.com/irmen/pyminiaudio), MIT; bundled miniaudio is public domain or MIT No Attribution.
-- Voices: Microsoft `bn-BD-NabanitaNeural` and `bn-IN-TanishaaNeural`.
+- Voices: Microsoft `bn-BD-NabanitaNeural`, `bn-BD-PradeepNeural`, `bn-IN-TanishaaNeural`, and `bn-IN-BashkarNeural`.
 - The client library license does not grant rights to Microsoft’s service or its output. Provider terms apply; no commercial license is promised by this app.
 - Earlier Piper Bangla assets remain documented above for historical attribution; they are no longer selectable.

@@ -35,12 +35,16 @@ VOICES = [
     ('pt_BR-faber-medium', 'Faber · Portuguese Male'),
     ('zh_CN-huayan-medium', 'Huayan · Mandarin Female'),
     ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female · Online'),
-    ('bn_BD-tanishaa-neural', 'Tanishaa · India Female · Online'),
+    ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male · Online'),
+    ('bn_BD-tanishaa-neural', 'Tanishaa · Indian Bengali Female · Online'),
+    ('bn_BD-bashkar-neural', 'Bashkar · Indian Bengali Male · Online'),
 ]
 
 ONLINE_VOICES = {
     'bn_BD-nabanita-neural': 'bn-BD-NabanitaNeural',
+    'bn_BD-pradeep-neural': 'bn-BD-PradeepNeural',
     'bn_BD-tanishaa-neural': 'bn-IN-TanishaaNeural',
+    'bn_BD-bashkar-neural': 'bn-IN-BashkarNeural',
 }
 
 _voices = {}

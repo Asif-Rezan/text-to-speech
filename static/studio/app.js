@@ -113,7 +113,7 @@
     const error = form.querySelector(`[data-error-for="${CSS.escape(field.name)}"]`);
     if (error) error.textContent = '';
   }));
-  document.querySelector('#sampleBtn').addEventListener('click', () => { text.value = language.value === 'bn_BD' ? 'বন্ধুরা, চলো আজ আমরা রঙিন বনের এক মজার গল্প শুনি! ছোট্ট খরগোশটি বলল, চলো সবাই মিলে খেলতে যাই।' : samples[Math.floor(Math.random() * samples.length)]; update(); text.focus(); });
+  document.querySelector('#sampleBtn').addEventListener('click', () => { text.value = language.value === 'bn_BD' ? 'আজকের আলোচনায় আপনাদের স্বাগতম। পরিষ্কার উচ্চারণ ও স্বাভাবিক গতিতে কথা বললে প্রতিটি বিষয় সহজে বোঝা যায়। চলুন, একটি নতুন গল্প দিয়ে শুরু করি।' : samples[Math.floor(Math.random() * samples.length)]; update(); text.focus(); });
   document.querySelector('#clearBtn').addEventListener('click', () => { text.value = ''; update(); text.focus(); });
 
   form.addEventListener('submit', async event => {
