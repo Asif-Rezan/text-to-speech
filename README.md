@@ -31,3 +31,17 @@ waitress-serve --listen=127.0.0.1:8000 config.wsgi:application
 ```
 
 Health check: `GET /health/`.
+
+### Vercel temporary mode
+
+Vercel uses Python 3.12 and detects `config.wsgi.application`. Configure a nonempty
+`DJANGO_SECRET_KEY` and `DJANGO_DEBUG=0` in the project environment. Static assets
+are collected automatically. The function allows up to 300 seconds for cold model
+downloads and synthesis.
+
+On Vercel, SQLite, downloaded voice models, and generated WAV files live under
+`/tmp/neural-voice-studio`. Migrations initialize a fresh database on each instance;
+the development database is excluded from the function. History and downloads are
+temporary and are not shared between instances. Download audio immediately. For
+durable history and reliable downloads across instances, use an external database
+and object storage or deploy the existing Docker app with a persistent disk.

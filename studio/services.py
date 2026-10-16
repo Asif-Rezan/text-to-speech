@@ -103,6 +103,12 @@ def _get_voice(voice_name):
     path = ensure_model(voice_name)
     with _load_lock:
         if voice_name not in _voices:
+            if settings.ON_VERCEL:
+                # Keep only one loaded model and its disk cache per instance.
+                _voices.clear()
+                for cached in Path(settings.PIPER_MODEL_DIR).glob('*.onnx'):
+                    if cached != path:
+                        cached.unlink(missing_ok=True)
             _voices[voice_name] = PiperVoice.load(str(path), config_path=str(config_path(voice_name)))
     return _voices[voice_name]
 
@@ -159,12 +165,12 @@ def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True)
     try:
-        loaded_voice = _get_voice(voice)
         chunks = split_text(text)
         if not chunks:
             raise TTSUnavailable('Enter text to synthesize.')
         # Generate bounded segments, then join their PCM frames into one lossless WAV.
         with _synthesis_lock, tempfile.TemporaryDirectory(prefix='piper-', dir=output_path.parent) as temp_dir:
+            loaded_voice = _get_voice(voice)
             parts = []
             for index, chunk in enumerate(chunks):
                 part = Path(temp_dir) / f'{index:04d}.wav'

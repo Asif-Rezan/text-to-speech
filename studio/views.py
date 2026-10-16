@@ -44,7 +44,7 @@ def studio(request):
     if request.method == 'POST' and wants_json:
         return JsonResponse({'ok': False, 'message': 'Please correct the highlighted fields.', 'errors': form.errors.get_json_data()}, status=422)
     history = SpeechGeneration.objects.all()[:6]
-    return render(request, 'studio/home.html', {'form': form, 'history': history, 'site_url': settings.PUBLIC_SITE_URL})
+    return render(request, 'studio/home.html', {'form': form, 'history': history, 'site_url': settings.PUBLIC_SITE_URL, 'temporary_storage': settings.ON_VERCEL})
 
 
 @require_GET

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "config/wsgi.py": {
+      "maxDuration": 300,
+      "excludeFiles": "{venv/**,.venv/**,db.sqlite3,media/**,models/piper/*.onnx,server*.log}"
+    }
+  }
+}

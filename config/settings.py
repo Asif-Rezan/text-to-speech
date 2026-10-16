@@ -16,6 +16,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 ON_VERCEL = os.environ.get('VERCEL') == '1'
+RUNTIME_DIR = Path('/tmp/neural-voice-studio') if ON_VERCEL else BASE_DIR
 
 
 # Quick-start development settings - unsuitable for production
@@ -87,7 +88,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': Path(os.environ.get('DATABASE_PATH', BASE_DIR / 'db.sqlite3')),
+        'NAME': RUNTIME_DIR / 'db.sqlite3' if ON_VERCEL else Path(os.environ.get('DATABASE_PATH', BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -126,7 +127,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STORAGES = {
@@ -136,15 +137,14 @@ STORAGES = {
 WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
+MEDIA_ROOT = RUNTIME_DIR / 'media' if ON_VERCEL else Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
 
-PIPER_MODEL_DIR = Path(os.environ.get('PIPER_MODEL_DIR', BASE_DIR / 'models' / 'piper'))
+PIPER_MODEL_DIR = RUNTIME_DIR / 'models' if ON_VERCEL else Path(os.environ.get('PIPER_MODEL_DIR', BASE_DIR / 'models' / 'piper'))
 PIPER_CONFIG_DIR = BASE_DIR / 'models' / 'piper'
-PIPER_MODEL_BASE_URL = os.environ.get(
-    'PIPER_MODEL_BASE_URL',
-    'https://github.com/Asif-Rezan/text-to-speech/releases/latest/download',
-).rstrip('/')
-PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', 'http://127.0.0.1:8000').rstrip('/')
+PIPER_MODEL_BASE_URL = (os.environ.get('PIPER_MODEL_BASE_URL') or
+    'https://github.com/Asif-Rezan/text-to-speech/releases/latest/download').rstrip('/')
+PUBLIC_SITE_URL = (os.environ.get('PUBLIC_SITE_URL') or
+    ('https://text-to-speech-rezan2.vercel.app' if ON_VERCEL else 'http://127.0.0.1:8000')).rstrip('/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
