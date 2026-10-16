@@ -28,15 +28,20 @@
     const matches = voiceOptions.filter(option => option.value.startsWith(`${language.value}-`));
     voice.replaceChildren(...matches.map(option => new Option(option.label, option.value)));
     voice.value = matches.some(option => option.value === previous) ? previous : matches[0]?.value || '';
-    const banglaHelp = document.querySelector('#banglaVoiceHelp');
-    if (banglaHelp) banglaHelp.hidden = language.value !== 'bn_BD';
-    document.querySelector('#voicePrivacyNote').textContent = language.value === 'bn_BD'
-      ? '◆ Online Bangla voices send your script to Microsoft. No API key required.'
-      : '◆ Text and audio stay on this server for local voices.';
+    updateVoicePrivacy();
     text.lang = language.value === 'bn_BD' ? 'bn' : language.value.replace('_', '-');
     voice.classList.remove('field-invalid');
     const error = form.querySelector('[data-error-for="voice"]');
     if (error) error.textContent = '';
+  }
+
+  function updateVoicePrivacy() {
+    const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
+    document.querySelector('#voicePrivacyNote').textContent = localIndic
+      ? '◆ IndicVoice runs on this server. Experimental Bangla support; up to 1,000 characters.'
+      : language.value === 'bn_BD'
+        ? '◆ Online Bangla voices send your script to Microsoft. No API key required.'
+        : '◆ Text and audio stay on this server for local voices.';
   }
 
   function update() {
@@ -85,7 +90,7 @@
       bar.style.width = `${value}%`; percent.textContent = `${value}%`; elapsedLabel.textContent = `${elapsed}s elapsed`;
       const stage = value < 34 ? 0 : value < 78 ? 1 : 2;
       steps.forEach((step, index) => step.classList.toggle('active', index <= stage));
-      message.textContent = ['Preparing voice model and script…', language.value === 'bn_BD' ? 'Generating natural Bangla speech online…' : 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
+      message.textContent = ['Preparing voice model and script…', language.value === 'bn_BD' && voice.value !== 'bn_BD-indicvoice-experimental' ? 'Generating natural Bangla speech online…' : 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
     }, 1000);
   }
 
@@ -108,6 +113,7 @@
   text.addEventListener('input', update);
   speed.addEventListener('input', update);
   language.addEventListener('change', syncVoices);
+  voice.addEventListener('change', updateVoicePrivacy);
   form.querySelectorAll('input, textarea, select').forEach(field => field.addEventListener('input', () => {
     field.classList.remove('field-invalid');
     const error = form.querySelector(`[data-error-for="${CSS.escape(field.name)}"]`);

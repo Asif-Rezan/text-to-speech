@@ -60,3 +60,22 @@ to the provider’s terms. No commercial-use rights are implied by the client li
 The service returns compressed MP3 audio, decoded into a 24 kHz mono WAV using
 miniaudio. A WAV container does not restore quality lost in the source MP3.
 Start at 1.0× for the original speaking pace, with normal Bangla punctuation.
+
+### IndicVoice-82M experimental option
+
+All existing languages, Piper models, and four online Bangla voices are retained.
+The additional **IndicVoice-82M · Female · Experimental** option runs locally on
+CPU and uses the upstream `hf_beta` voice style. Bengali support is beta; this is
+not a verified improvement over the existing voices. Its frontend needs two
+compatibility fixes: allowing `bn` and avoiding incomplete English token objects.
+The adapter also keeps phonemes joined within each word and uses short chunks to
+avoid the upstream pipeline's silent truncation.
+
+Install `requirements.txt` (Python 3.12). The optional runtime is imported only
+when this voice is selected. Model assets are pinned to Hugging Face revision
+`2cf8fffbdf72a6fdee5cf841323a161d958b2e0a`, checked by SHA-256 on download, and
+cached under `models/indicvoice` within the runtime directory. No API key is used.
+The experimental option accepts up to 1,000 characters; existing voices retain
+the 20,000-character limit. CPU-only PyTorch is selected on Linux. The function
+bundle requires Vercel large-functions support; do not enable this deployment
+without a real memory and synthesis check on the target runtime.

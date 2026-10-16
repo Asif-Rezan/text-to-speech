@@ -9,11 +9,31 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import SpeechGeneration
-from .services import ONLINE_VOICES, TTSUnavailable, _fetch_online_audio, split_text, synthesize
+from .services import INDICVOICE_ID, ONLINE_VOICES, TTSUnavailable, _fetch_online_audio, split_text, synthesize
 from .forms import SpeechForm
 
 
 class StudioTests(TestCase):
+    def test_indicvoice_is_additional_and_has_its_own_text_limit(self):
+        from .services import VOICES
+        self.assertEqual(len(VOICES), 21)
+        self.assertEqual(len(ONLINE_VOICES), 4)
+        self.assertEqual(len([v for v, _ in VOICES if v.startswith('bn_BD-')]), 5)
+        values = {'text': 'আমি বাংলায় কথা বলি।', 'language': 'bn_BD',
+                  'voice': INDICVOICE_ID, 'speed': '1.00', 'format': 'wav'}
+        self.assertTrue(SpeechForm(values).is_valid())
+        values['text'] = 'ক' * 1001
+        self.assertIn('text', SpeechForm(values).errors)
+        values['voice'] = 'bn_BD-nabanita-neural'
+        self.assertTrue(SpeechForm(values).is_valid())
+
+    @patch('studio.indicvoice.synthesize_indicvoice', return_value=2.0)
+    @patch('studio.services.synthesize_online')
+    def test_indicvoice_does_not_fall_back_to_an_online_model(self, online, local):
+        self.assertEqual(synthesize('চলো গল্প শুনি।', INDICVOICE_ID, 'bn_BD', 1, '/tmp/indic.wav'), 2.0)
+        local.assert_called_once()
+        online.assert_not_called()
+
     def test_bangla_online_voices_validate(self):
         for voice in ONLINE_VOICES:
             form = SpeechForm({'text': 'চলো গল্প শুনি।', 'language': 'bn_BD',

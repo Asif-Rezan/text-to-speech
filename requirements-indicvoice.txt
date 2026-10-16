@@ -1,0 +1,7 @@
+# Keep the Linux runtime CPU-only; CUDA wheels cannot fit this deployment.
+torch @ https://download.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl ; sys_platform == 'linux'
+torch==2.6.0 ; sys_platform != 'linux'
+transformers==4.46.3
+spacy>=3.8,<4
+indic-g2p @ git+https://github.com/Bindkushal/indic-g2p.git@6bc9ca45fb06955bb19057344ac6a4e400ed4c95
+indic-voice @ git+https://github.com/Bindkushal/indic-voice.git@57240e779560e8c3d022836f4191e0db6dff9018

@@ -29,3 +29,11 @@ Piper voice models can carry independent dataset/model terms. Review the voice's
 - Voices: Microsoft `bn-BD-NabanitaNeural`, `bn-BD-PradeepNeural`, `bn-IN-TanishaaNeural`, and `bn-IN-BashkarNeural`.
 - The client library license does not grant rights to Microsoft’s service or its output. Provider terms apply; no commercial license is promised by this app.
 - Earlier Piper Bangla assets remain documented above for historical attribution; they are no longer selectable.
+
+## IndicVoice experimental
+
+- [IndicVoice-82M](https://huggingface.co/Bindkushal/IndicVoice-82M), model and runtime listed under Apache 2.0.
+- Runtime pinned to `Bindkushal/indic-voice` commit `57240e779560e8c3d022836f4191e0db6dff9018`.
+- Frontend pinned to `Bindkushal/indic-g2p` commit `6bc9ca45fb06955bb19057344ac6a4e400ed4c95`.
+- Model revision: `2cf8fffbdf72a6fdee5cf841323a161d958b2e0a`; style: `hf_beta`.
+- This app applies compatibility fixes in its adapter, without changing upstream files or model weights.

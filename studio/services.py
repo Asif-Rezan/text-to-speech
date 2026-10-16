@@ -38,6 +38,7 @@ VOICES = [
     ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male · Online'),
     ('bn_BD-tanishaa-neural', 'Tanishaa · Indian Bengali Female · Online'),
     ('bn_BD-bashkar-neural', 'Bashkar · Indian Bengali Male · Online'),
+    ('bn_BD-indicvoice-experimental', 'IndicVoice-82M · Female · Experimental'),
 ]
 
 ONLINE_VOICES = {
@@ -46,6 +47,7 @@ ONLINE_VOICES = {
     'bn_BD-tanishaa-neural': 'bn-IN-TanishaaNeural',
     'bn_BD-bashkar-neural': 'bn-IN-BashkarNeural',
 }
+INDICVOICE_ID = 'bn_BD-indicvoice-experimental'
 
 _voices = {}
 _load_lock = threading.Lock()
@@ -71,11 +73,11 @@ def model_available(voice='en_US-ljspeech-medium'):
 
 
 def all_models_available():
-    return all(model_available(voice) for voice, _label in VOICES if voice not in ONLINE_VOICES)
+    return all(model_available(voice) for voice, _label in VOICES if voice not in ONLINE_VOICES and voice != INDICVOICE_ID)
 
 
 def model_configs_available():
-    return all(config_path(voice).is_file() for voice, _label in VOICES if voice not in ONLINE_VOICES)
+    return all(config_path(voice).is_file() for voice, _label in VOICES if voice not in ONLINE_VOICES and voice != INDICVOICE_ID)
 
 
 def ensure_model(voice_name):
@@ -202,6 +204,12 @@ def synthesize_online(text, voice, speed, output_path):
 
 
 def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
+    if voice == INDICVOICE_ID:
+        from .indicvoice import synthesize_indicvoice
+        with _synthesis_lock:
+            if settings.ON_VERCEL:
+                _voices.clear()
+            return synthesize_indicvoice(text, speed, output_path)
     if voice in ONLINE_VOICES:
         return synthesize_online(text, voice, speed, output_path)
     try:
