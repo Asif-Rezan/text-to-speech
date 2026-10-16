@@ -1,41 +1,53 @@
 import tempfile
+import array
+import wave
+from types import SimpleNamespace
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import SpeechGeneration
-from .services import BANGLA_SPEAKERS, config_path, model_path, split_text, synthesize
+from .services import ONLINE_VOICES, TTSUnavailable, _fetch_online_audio, split_text, synthesize
 from .forms import SpeechForm
 
 
 class StudioTests(TestCase):
-    def test_bangla_voices_share_model_and_validate(self):
-        voices = list(BANGLA_SPEAKERS)
-        self.assertEqual(model_path(voices[0]), model_path(voices[1]))
-        self.assertTrue(config_path(voices[0]).is_file())
-        for voice in voices:
+    def test_bangla_online_voices_validate(self):
+        for voice in ONLINE_VOICES:
             form = SpeechForm({'text': 'চলো গল্প শুনি।', 'language': 'bn_BD',
                                'voice': voice, 'speed': '1.10', 'format': 'wav'})
             self.assertTrue(form.is_valid(), form.errors)
 
-    @patch('studio.services._get_voice')
-    def test_bangla_synthesis_selects_distinct_speakers(self, get_voice):
-        selected = []
+    @patch('edge_tts.Communicate')
+    def test_online_voice_and_pace_are_sent_correctly(self, communicate):
+        from asgiref.sync import async_to_sync
+        communicate.return_value.save = AsyncMock()
+        for voice, provider_voice in ONLINE_VOICES.items():
+            async_to_sync(_fetch_online_audio)('চলো গল্প শুনি।', voice, 1.1, '/tmp/test.mp3')
+            self.assertEqual(communicate.call_args.args[1], provider_voice)
+            self.assertEqual(communicate.call_args.kwargs['rate'], '+10%')
 
-        def write_audio(text, wav_file, syn_config):
-            selected.append(syn_config.speaker_id)
-            wav_file.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
-            wav_file.writeframes(b'\0\0' * 2205)
-
-        get_voice.return_value.synthesize_wav.side_effect = write_audio
+    @patch('miniaudio.decode_file')
+    @patch('studio.services._fetch_online_audio', new_callable=AsyncMock)
+    def test_online_audio_becomes_valid_wav(self, fetch, decode):
+        decode.return_value = SimpleNamespace(samples=array.array('h', [100] * 2400))
         with tempfile.TemporaryDirectory() as directory:
-            for index, voice in enumerate(BANGLA_SPEAKERS):
-                duration = synthesize('চলো গল্প শুনি।', voice, 'bn_BD', 1.1,
-                                      Path(directory) / f'{index}.wav')
-                self.assertAlmostEqual(duration, 0.1)
-        self.assertEqual(selected, [12, 15])
+            output = Path(directory) / 'audio.wav'
+            duration = synthesize('চলো গল্প শুনি।', 'bn_BD-nabanita-neural', 'bn_BD', 1, output)
+            self.assertAlmostEqual(duration, 0.1)
+            with wave.open(str(output)) as audio:
+                self.assertEqual((audio.getnchannels(), audio.getsampwidth(), audio.getframerate()), (1, 2, 24000))
+
+    @patch('studio.services._fetch_online_audio', new_callable=AsyncMock, side_effect=TimeoutError)
+    def test_online_failure_removes_partial_audio(self, fetch):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'audio.wav'
+            output.write_bytes(b'partial')
+            with self.assertRaisesMessage(TTSUnavailable, 'online Bangla voice service is unavailable'):
+                synthesize('চলো গল্প শুনি।', 'bn_BD-nabanita-neural', 'bn_BD', 1, output)
+            self.assertFalse(output.exists())
 
     def test_home_and_health(self):
         home = self.client.get(reverse('studio:home'))

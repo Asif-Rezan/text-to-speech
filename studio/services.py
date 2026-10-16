@@ -1,3 +1,4 @@
+import asyncio
 import re
 import shutil
 import tempfile
@@ -33,22 +34,14 @@ VOICES = [
     ('hi_IN-priyamvada-medium', 'Priyamvada · Hindi Female'),
     ('pt_BR-faber-medium', 'Faber · Portuguese Male'),
     ('zh_CN-huayan-medium', 'Huayan · Mandarin Female'),
-    ('bn_BD-google-female-1', 'Bangla Female 1 · Storytelling'),
-    ('bn_BD-google-female-2', 'Bangla Female 2 · Cartoon narration'),
+    ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female · Online'),
+    ('bn_BD-tanishaa-neural', 'Tanishaa · India Female · Online'),
 ]
 
-# Two distinct speakers from the same multi-speaker model, sharing one download.
-BANGLA_SPEAKERS = {'bn_BD-google-female-1': 12, 'bn_BD-google-female-2': 15}
-BANGLA_MODEL = 'bn_BD-google-medium'
-BANGLA_MODEL_URL = (
-    'https://huggingface.co/rhasspy/piper-voices/resolve/'
-    'c10ece1aade47bb51c153c893d14e5bf8e5b7117/'
-    'bn/bn_BD/google/medium/bn_BD-google-medium.onnx'
-)
-
-
-def model_name(voice):
-    return BANGLA_MODEL if voice in BANGLA_SPEAKERS else voice
+ONLINE_VOICES = {
+    'bn_BD-nabanita-neural': 'bn-BD-NabanitaNeural',
+    'bn_BD-tanishaa-neural': 'bn-IN-TanishaaNeural',
+}
 
 _voices = {}
 _load_lock = threading.Lock()
@@ -61,11 +54,11 @@ class TTSUnavailable(RuntimeError):
 
 
 def model_path(voice):
-    return Path(settings.PIPER_MODEL_DIR) / f'{model_name(voice)}.onnx'
+    return Path(settings.PIPER_MODEL_DIR) / f'{voice}.onnx'
 
 
 def config_path(voice):
-    return Path(settings.PIPER_CONFIG_DIR) / f'{model_name(voice)}.onnx.json'
+    return Path(settings.PIPER_CONFIG_DIR) / f'{voice}.onnx.json'
 
 
 def model_available(voice='en_US-ljspeech-medium'):
@@ -74,11 +67,11 @@ def model_available(voice='en_US-ljspeech-medium'):
 
 
 def all_models_available():
-    return all(model_available(voice) for voice, _label in VOICES)
+    return all(model_available(voice) for voice, _label in VOICES if voice not in ONLINE_VOICES)
 
 
 def model_configs_available():
-    return all(config_path(voice).is_file() for voice, _label in VOICES)
+    return all(config_path(voice).is_file() for voice, _label in VOICES if voice not in ONLINE_VOICES)
 
 
 def ensure_model(voice_name):
@@ -94,7 +87,7 @@ def ensure_model(voice_name):
             return path
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix('.onnx.part')
-        url = BANGLA_MODEL_URL if voice_name in BANGLA_SPEAKERS else f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
+        url = f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
         request = Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'})
         try:
             with urlopen(request, timeout=60) as response, open(partial, 'wb') as destination:
@@ -117,7 +110,7 @@ def _get_voice(voice_name):
     except (ImportError, OSError) as exc:
         raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     path = ensure_model(voice_name)
-    cache_key = model_name(voice_name)
+    cache_key = voice_name
     with _load_lock:
         if cache_key not in _voices:
             if settings.ON_VERCEL:
@@ -173,15 +166,47 @@ def _merge_wav_files(parts, output_path):
                     destination.writeframes(source.readframes(source.getnframes()))
 
 
+async def _fetch_online_audio(text, voice, speed, destination):
+    import edge_tts
+
+    rate = f'{round((float(speed) - 1) * 100):+d}%'
+    await asyncio.wait_for(
+        edge_tts.Communicate(text, ONLINE_VOICES[voice], rate=rate,
+                             connect_timeout=10, receive_timeout=60).save(str(destination)),
+        timeout=240,
+    )
+
+
+def synthesize_online(text, voice, speed, output_path):
+    from asgiref.sync import async_to_sync
+    import miniaudio
+
+    output_path = Path(output_path).with_suffix('.wav')
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with tempfile.TemporaryDirectory(prefix='online-', dir=output_path.parent) as directory:
+            source = Path(directory) / 'speech.mp3'
+            async_to_sync(_fetch_online_audio)(text, voice, speed, source)
+            decoded = miniaudio.decode_file(str(source), nchannels=1, sample_rate=24000)
+            with wave.open(str(output_path), 'wb') as destination:
+                destination.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+                destination.writeframes(decoded.samples.tobytes())
+        return len(decoded.samples) / 24000
+    except Exception as exc:
+        output_path.unlink(missing_ok=True)
+        raise TTSUnavailable('The online Bangla voice service is unavailable. Please try again shortly.') from exc
+
+
 def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
+    if voice in ONLINE_VOICES:
+        return synthesize_online(text, voice, speed, output_path)
     try:
         from piper.config import SynthesisConfig
     except (ImportError, OSError) as exc:
         raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     output_path = Path(output_path).with_suffix('.wav')
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True,
-                             speaker_id=BANGLA_SPEAKERS.get(voice))
+    config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True)
     try:
         chunks = split_text(text)
         if not chunks:

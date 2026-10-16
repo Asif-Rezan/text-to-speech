@@ -1,6 +1,6 @@
 # Neural Voice Studio
 
-A self-hosted Django text-to-speech studio powered by Piper. Eighteen voices—including eight US English options and two Bangla female narration options—across nine language locales are synthesized locally with ONNX: no account, API key, per-character charge, or network request during generation.
+A Django text-to-speech studio with sixteen local Piper voices and two online Bangla female voices across nine language locales. Local voices use ONNX; Bangla uses Microsoft Edge’s online service through `edge-tts`, without an API key.
 
 ## Setup
 
@@ -48,9 +48,12 @@ and object storage or deploy the existing Docker app with a persistent disk.
 
 ### Bangla narration
 
-Choose **বাংলা — Bangla** for two female narration voices. They use distinct
-speakers (`4811` / ID 12 and `rm` / ID 15) in `bn_BD-google-medium`, sharing a
-single pinned Piper model download from Hugging Face. These are narration voices,
-not child voices or emotion-controlled character actors. Try the Bangla sample
-and a pace of 1.05–1.15× for short cartoon dialogue. Review the accompanying
-model card and notices before commercial use.
+Choose **বাংলা — Bangla** for **Nabanita** (Bangladesh) or **Tanishaa** (India).
+These replace the earlier Piper Bangla voices. Scripts selected for Bangla are
+sent to Microsoft; other voices remain local. No API key is required. The
+unofficial Edge service can change or become unavailable, and use remains subject
+to the provider’s terms. No commercial-use rights are implied by the client library.
+
+The service returns compressed MP3 audio, decoded into a 24 kHz mono WAV using
+miniaudio. A WAV container does not restore quality lost in the source MP3.
+Try a pace of 0.95–1.05× and short sentences for storytelling.

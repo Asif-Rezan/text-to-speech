@@ -30,6 +30,9 @@
     voice.value = matches.some(option => option.value === previous) ? previous : matches[0]?.value || '';
     const banglaHelp = document.querySelector('#banglaVoiceHelp');
     if (banglaHelp) banglaHelp.hidden = language.value !== 'bn_BD';
+    document.querySelector('#voicePrivacyNote').textContent = language.value === 'bn_BD'
+      ? '◆ Online Bangla voices send your script to Microsoft. No API key required.'
+      : '◆ Text and audio stay on this server for local voices.';
     text.lang = language.value === 'bn_BD' ? 'bn' : language.value.replace('_', '-');
     voice.classList.remove('field-invalid');
     const error = form.querySelector('[data-error-for="voice"]');
@@ -82,7 +85,7 @@
       bar.style.width = `${value}%`; percent.textContent = `${value}%`; elapsedLabel.textContent = `${elapsed}s elapsed`;
       const stage = value < 34 ? 0 : value < 78 ? 1 : 2;
       steps.forEach((step, index) => step.classList.toggle('active', index <= stage));
-      message.textContent = ['Preparing voice model and script…', 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
+      message.textContent = ['Preparing voice model and script…', language.value === 'bn_BD' ? 'Generating natural Bangla speech online…' : 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
     }, 1000);
   }
 

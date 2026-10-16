@@ -90,7 +90,7 @@
               <div class="pane-heading"><div><span class="step">02</span><h2>Voice settings</h2></div><p class="pane-help">Fine-tune how your audio sounds.</p></div>
               <label for="id_language">Language</label>{{ form.language }}
               <label for="id_voice">Voice</label>{{ form.voice }}
-              <p class="pane-help" id="banglaVoiceHelp" hidden>For kids’ cartoons, try short, expressive sentences and a pace of 1.05–1.15×. These are female narration voices, not child voices.</p>
+              <p class="pane-help" id="banglaVoiceHelp" hidden>Natural online voices: Nabanita (Bangladesh) and Tanishaa (India). Bangla scripts are sent to Microsoft for speech generation. Try a pace of 0.95–1.05× for storytelling.</p>
               <div class="field-error client-field-error" data-error-for="language">{% for error in form.language.errors %}{{ error }}{% endfor %}</div>
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
               <div class="d-flex justify-content-between"><label for="id_speed">Speaking pace</label><output id="speedValue">1.00×</output></div>
@@ -100,7 +100,7 @@
               <label for="id_format">Export format</label>{{ form.format }}
               <div class="field-error client-field-error" data-error-for="format">{% for error in form.format.errors %}{{ error }}{% endfor %}</div>
               <button class="generate-btn" type="submit" id="generateBtn"><span class="btn-icon">▶</span><span>Generate speech</span></button>
-              <p class="privacy-note"><span>◆</span> Text and audio never leave this server.</p>
+              <p class="privacy-note" id="voicePrivacyNote">◆ Text and audio stay on this server for local voices.</p>
             </div>
           </div>
         </form>

@@ -21,3 +21,11 @@ Piper voice models can carry independent dataset/model terms. Review the voice's
 - Google Bengali dataset: [OpenSLR 37](https://www.openslr.org/37/), collected by Google, licensed CC BY-SA 4.0.
 - CMU Indic data: Carnegie Mellon University, copyright 2009–2017, under the permission notice preserved in `models/piper/bn_BD-google-medium.MODEL_CARD`.
 - The model card is included verbatim; no model weights are modified.
+
+## Online Bangla synthesis
+
+- Client: [rany2/edge-tts](https://github.com/rany2/edge-tts), LGPLv3.
+- Audio decoder: [miniaudio](https://github.com/irmen/pyminiaudio), MIT; bundled miniaudio is public domain or MIT No Attribution.
+- Voices: Microsoft `bn-BD-NabanitaNeural` and `bn-IN-TanishaaNeural`.
+- The client library license does not grant rights to Microsoft’s service or its output. Provider terms apply; no commercial license is promised by this app.
+- Earlier Piper Bangla assets remain documented above for historical attribution; they are no longer selectable.
