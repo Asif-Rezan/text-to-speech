@@ -14,6 +14,7 @@ LANGUAGES = [
     ('es_ES', 'Spanish — Spain'), ('fr_FR', 'French — France'),
     ('de_DE', 'German — Germany'), ('hi_IN', 'Hindi — India'),
     ('pt_BR', 'Portuguese — Brazil'), ('zh_CN', 'Mandarin Chinese'),
+    ('bn_BD', 'বাংলা — Bangla'),
 ]
 VOICES = [
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
@@ -32,7 +33,22 @@ VOICES = [
     ('hi_IN-priyamvada-medium', 'Priyamvada · Hindi Female'),
     ('pt_BR-faber-medium', 'Faber · Portuguese Male'),
     ('zh_CN-huayan-medium', 'Huayan · Mandarin Female'),
+    ('bn_BD-google-female-1', 'Bangla Female 1 · Storytelling'),
+    ('bn_BD-google-female-2', 'Bangla Female 2 · Cartoon narration'),
 ]
+
+# Two distinct speakers from the same multi-speaker model, sharing one download.
+BANGLA_SPEAKERS = {'bn_BD-google-female-1': 12, 'bn_BD-google-female-2': 15}
+BANGLA_MODEL = 'bn_BD-google-medium'
+BANGLA_MODEL_URL = (
+    'https://huggingface.co/rhasspy/piper-voices/resolve/'
+    'c10ece1aade47bb51c153c893d14e5bf8e5b7117/'
+    'bn/bn_BD/google/medium/bn_BD-google-medium.onnx'
+)
+
+
+def model_name(voice):
+    return BANGLA_MODEL if voice in BANGLA_SPEAKERS else voice
 
 _voices = {}
 _load_lock = threading.Lock()
@@ -45,11 +61,11 @@ class TTSUnavailable(RuntimeError):
 
 
 def model_path(voice):
-    return Path(settings.PIPER_MODEL_DIR) / f'{voice}.onnx'
+    return Path(settings.PIPER_MODEL_DIR) / f'{model_name(voice)}.onnx'
 
 
 def config_path(voice):
-    return Path(settings.PIPER_CONFIG_DIR) / f'{voice}.onnx.json'
+    return Path(settings.PIPER_CONFIG_DIR) / f'{model_name(voice)}.onnx.json'
 
 
 def model_available(voice='en_US-ljspeech-medium'):
@@ -78,7 +94,7 @@ def ensure_model(voice_name):
             return path
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix('.onnx.part')
-        url = f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
+        url = BANGLA_MODEL_URL if voice_name in BANGLA_SPEAKERS else f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
         request = Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'})
         try:
             with urlopen(request, timeout=60) as response, open(partial, 'wb') as destination:
@@ -101,16 +117,17 @@ def _get_voice(voice_name):
     except (ImportError, OSError) as exc:
         raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     path = ensure_model(voice_name)
+    cache_key = model_name(voice_name)
     with _load_lock:
-        if voice_name not in _voices:
+        if cache_key not in _voices:
             if settings.ON_VERCEL:
                 # Keep only one loaded model and its disk cache per instance.
                 _voices.clear()
                 for cached in Path(settings.PIPER_MODEL_DIR).glob('*.onnx'):
                     if cached != path:
                         cached.unlink(missing_ok=True)
-            _voices[voice_name] = PiperVoice.load(str(path), config_path=str(config_path(voice_name)))
-    return _voices[voice_name]
+            _voices[cache_key] = PiperVoice.load(str(path), config_path=str(config_path(voice_name)))
+    return _voices[cache_key]
 
 
 def split_text(text, max_chars=3500):
@@ -118,7 +135,7 @@ def split_text(text, max_chars=3500):
     text = text.strip()
     if len(text) <= max_chars:
         return [text] if text else []
-    units = re.split(r'(?<=[.!?。！？])\s+|\n+', text)
+    units = re.split(r'(?<=[.!?।॥。！？])\s+|\n+', text)
     chunks, current = [], ''
     for unit in filter(None, (unit.strip() for unit in units)):
         if len(unit) > max_chars:
@@ -163,7 +180,8 @@ def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
         raise TTSUnavailable('The speech engine is temporarily unavailable.') from exc
     output_path = Path(output_path).with_suffix('.wav')
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True)
+    config = SynthesisConfig(length_scale=1 / float(speed), normalize_audio=True,
+                             speaker_id=BANGLA_SPEAKERS.get(voice))
     try:
         chunks = split_text(text)
         if not chunks:

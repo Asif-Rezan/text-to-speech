@@ -28,6 +28,9 @@
     const matches = voiceOptions.filter(option => option.value.startsWith(`${language.value}-`));
     voice.replaceChildren(...matches.map(option => new Option(option.label, option.value)));
     voice.value = matches.some(option => option.value === previous) ? previous : matches[0]?.value || '';
+    const banglaHelp = document.querySelector('#banglaVoiceHelp');
+    if (banglaHelp) banglaHelp.hidden = language.value !== 'bn_BD';
+    text.lang = language.value === 'bn_BD' ? 'bn' : language.value.replace('_', '-');
     voice.classList.remove('field-invalid');
     const error = form.querySelector('[data-error-for="voice"]');
     if (error) error.textContent = '';
@@ -107,7 +110,7 @@
     const error = form.querySelector(`[data-error-for="${CSS.escape(field.name)}"]`);
     if (error) error.textContent = '';
   }));
-  document.querySelector('#sampleBtn').addEventListener('click', () => { text.value = samples[Math.floor(Math.random() * samples.length)]; update(); text.focus(); });
+  document.querySelector('#sampleBtn').addEventListener('click', () => { text.value = language.value === 'bn_BD' ? 'বন্ধুরা, চলো আজ আমরা রঙিন বনের এক মজার গল্প শুনি! ছোট্ট খরগোশটি বলল, চলো সবাই মিলে খেলতে যাই।' : samples[Math.floor(Math.random() * samples.length)]; update(); text.focus(); });
   document.querySelector('#clearBtn').addEventListener('click', () => { text.value = ''; update(); text.focus(); });
 
   form.addEventListener('submit', async event => {

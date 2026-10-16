@@ -5,14 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Free Text to Speech Online – AI Voice Generator</title>
-  <meta name="description" content="Convert text to speech online for free with 16 natural AI voices in 8 languages. Create and download long text-to-voice audio up to 20,000 characters.">
+  <meta name="description" content="Convert text to speech online for free with 18 natural AI voices in 9 languages. Create and download long text-to-voice audio up to 20,000 characters.">
   <meta name="keywords" content="free text to speech, text to voice, AI voice generator, text to audio, online text reader, free TTS, voice generator, text reader">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="author" content="NeuralVoice">
   <link rel="canonical" href="{{ site_url }}/">
   <meta property="og:type" content="website"><meta property="og:url" content="{{ site_url }}/">
   <meta property="og:title" content="Free Text to Speech Online – Natural AI Voices">
-  <meta property="og:description" content="Turn up to 20,000 characters into downloadable speech with 16 voices across 8 languages.">
+  <meta property="og:description" content="Turn up to 20,000 characters into downloadable speech with 18 voices across 9 languages.">
   <meta property="og:site_name" content="NeuralVoice"><meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Free Text to Speech Online">
   <meta name="twitter:description" content="Convert text to natural voice and download one audio file for free.">
@@ -28,13 +28,13 @@
   <link rel="stylesheet" href="{% static 'studio/ui-v2.css' %}">
   <link rel="stylesheet" href="{% static 'studio/download.css' %}">
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebApplication","name":"NeuralVoice Free Text to Speech","url":"{{ site_url }}/","applicationCategory":"MultimediaApplication","operatingSystem":"Any","description":"Free online text to speech and AI voice generator with 16 voices across 8 languages.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Free text to speech","16 natural voices","8 language locales","20,000 character scripts","WAV audio download"]}
+  {"@context":"https://schema.org","@type":"WebApplication","name":"NeuralVoice Free Text to Speech","url":"{{ site_url }}/","applicationCategory":"MultimediaApplication","operatingSystem":"Any","description":"Free online text to speech and AI voice generator with 18 voices across 9 languages.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Free text to speech","18 natural voices","9 language locales","20,000 character scripts","WAV audio download"]}
   </script>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
     {"@type":"Question","name":"How can I convert text to speech for free?","acceptedAnswer":{"@type":"Answer","text":"Paste your text, choose a language and voice, adjust the speaking speed, and select Generate speech. You can play or download the finished WAV audio."}},
     {"@type":"Question","name":"How much text can I turn into voice?","acceptedAnswer":{"@type":"Answer","text":"You can convert scripts up to 20,000 characters. Long scripts are processed in sections and combined into one audio file."}},
-    {"@type":"Question","name":"Which languages are available?","acceptedAnswer":{"@type":"Answer","text":"The voice generator supports US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, and Mandarin Chinese."}}
+    {"@type":"Question","name":"Which languages are available?","acceptedAnswer":{"@type":"Answer","text":"The voice generator supports US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, Mandarin Chinese, and Bangla."}}
   ]}
   </script>
 </head>
@@ -61,10 +61,10 @@
     <section class="hero container text-center">
       <div class="eyebrow">FREE ONLINE AI VOICE GENERATOR</div>
       <h1>Free text to speech, <span class="text-gradient">made beautifully.</span></h1>
-      <p class="hero-copy mx-auto">Convert text to natural-sounding voice online. Choose from 16 voices in 8 languages, create long-form audio, and download one high-quality WAV file.</p>
+      <p class="hero-copy mx-auto">Convert text to natural-sounding voice online. Choose from 18 voices in 9 languages, create long-form audio, and download one high-quality WAV file.</p>
       <div class="hero-actions"><a class="primary-cta" href="#studio">Create free audio <span>→</span></a><a class="secondary-cta" href="#how-it-works">See how it works</a></div>
       <div class="d-flex justify-content-center gap-4 hero-stats">
-        <span><strong>16</strong> voices</span><span><strong>8</strong> languages</span><span><strong>Zero</strong> API fees</span>
+        <span><strong>18</strong> voices</span><span><strong>9</strong> languages</span><span><strong>Zero</strong> API fees</span>
       </div>
     </section>
 
@@ -90,6 +90,7 @@
               <div class="pane-heading"><div><span class="step">02</span><h2>Voice settings</h2></div><p class="pane-help">Fine-tune how your audio sounds.</p></div>
               <label for="id_language">Language</label>{{ form.language }}
               <label for="id_voice">Voice</label>{{ form.voice }}
+              <p class="pane-help" id="banglaVoiceHelp" hidden>For kids’ cartoons, try short, expressive sentences and a pace of 1.05–1.15×. These are female narration voices, not child voices.</p>
               <div class="field-error client-field-error" data-error-for="language">{% for error in form.language.errors %}{{ error }}{% endfor %}</div>
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
               <div class="d-flex justify-content-between"><label for="id_speed">Speaking pace</label><output id="speedValue">1.00×</output></div>
@@ -116,7 +117,7 @@
     <section class="container feature-row">
       <div><span>◈</span><h3>Natural AI voices</h3><p>Expressive text-to-voice audio with clear pronunciation and comfortable pacing.</p></div>
       <div><span>⌁</span><h3>Long text to audio</h3><p>Convert up to 20,000 characters and receive one merged audio download.</p></div>
-      <div><span>◇</span><h3>Multilingual speech</h3><p>Sixteen voices across eight languages, including eight US English options.</p></div>
+      <div><span>◇</span><h3>Multilingual speech</h3><p>Eighteen voices across nine languages, including two Bangla female voices for stories and cartoon narration.</p></div>
     </section>
 
     <section class="container seo-content" aria-labelledby="how-it-works">
@@ -125,7 +126,7 @@
       <div class="faq-wrap" id="faq"><span class="eyebrow">COMMON QUESTIONS</span><h2>Free text-to-speech FAQ</h2>
         <details><summary>How can I convert text to speech for free?</summary><p>Paste your script into the editor, select a language and voice, adjust the pace, and click Generate speech. When processing finishes, play or download your audio.</p></details>
         <details><summary>How much text can I turn into voice?</summary><p>You can convert up to 20,000 characters at once. Longer scripts are intelligently divided and combined into one seamless WAV file.</p></details>
-        <details><summary>What languages does the AI voice generator support?</summary><p>Available languages include US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, and Mandarin Chinese.</p></details>
+        <details><summary>What languages does the AI voice generator support?</summary><p>Available languages include US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, Mandarin Chinese, and Bangla.</p></details>
         <details><summary>Can I use text to speech for videos and podcasts?</summary><p>You can create narration and voiceover drafts for videos, podcasts, learning material, presentations, and accessibility projects. Always review the applicable content and voice licensing terms for your intended use.</p></details>
       </div>
     </section>
@@ -141,7 +142,7 @@
       <div class="progress-steps"><span class="active">Analyze</span><span>Synthesize</span><span>Finalize</span></div>
     </div>
   </div>
-  <footer><div class="container footer-inner"><div class="footer-brand"><span class="logo-mark"><i></i><i></i><i></i><i></i></span><strong>NeuralVoice</strong><small>Words deserve a great voice.</small></div><div class="footer-links"><a href="#studio">Create audio</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a></div><span class="footer-meta">16 voices · 8 languages · WAV</span></div></footer>
+  <footer><div class="container footer-inner"><div class="footer-brand"><span class="logo-mark"><i></i><i></i><i></i><i></i></span><strong>NeuralVoice</strong><small>Words deserve a great voice.</small></div><div class="footer-links"><a href="#studio">Create audio</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a></div><span class="footer-meta">18 voices · 9 languages · WAV</span></div></footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'studio/app.js' %}"></script>
 </body></html>

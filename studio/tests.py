@@ -1,14 +1,42 @@
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import SpeechGeneration
-from .services import split_text
+from .services import BANGLA_SPEAKERS, config_path, model_path, split_text, synthesize
+from .forms import SpeechForm
 
 
 class StudioTests(TestCase):
+    def test_bangla_voices_share_model_and_validate(self):
+        voices = list(BANGLA_SPEAKERS)
+        self.assertEqual(model_path(voices[0]), model_path(voices[1]))
+        self.assertTrue(config_path(voices[0]).is_file())
+        for voice in voices:
+            form = SpeechForm({'text': 'চলো গল্প শুনি।', 'language': 'bn_BD',
+                               'voice': voice, 'speed': '1.10', 'format': 'wav'})
+            self.assertTrue(form.is_valid(), form.errors)
+
+    @patch('studio.services._get_voice')
+    def test_bangla_synthesis_selects_distinct_speakers(self, get_voice):
+        selected = []
+
+        def write_audio(text, wav_file, syn_config):
+            selected.append(syn_config.speaker_id)
+            wav_file.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
+            wav_file.writeframes(b'\0\0' * 2205)
+
+        get_voice.return_value.synthesize_wav.side_effect = write_audio
+        with tempfile.TemporaryDirectory() as directory:
+            for index, voice in enumerate(BANGLA_SPEAKERS):
+                duration = synthesize('চলো গল্প শুনি।', voice, 'bn_BD', 1.1,
+                                      Path(directory) / f'{index}.wav')
+                self.assertAlmostEqual(duration, 0.1)
+        self.assertEqual(selected, [12, 15])
+
     def test_home_and_health(self):
         home = self.client.get(reverse('studio:home'))
         self.assertContains(home, 'Free Text to Speech Online')
