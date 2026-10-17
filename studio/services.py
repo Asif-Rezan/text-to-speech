@@ -20,7 +20,11 @@ LANGUAGES = [
     ('pt_BR', 'Portuguese — Brazil'), ('zh_CN', 'Mandarin Chinese'),
 ]
 
+PIPER_BANGLA = 'bn_BD-google-medium'
+STORY_VOICES = {*PARLER_VOICES, PIPER_BANGLA}
+
 VOICES = [
+    (PIPER_BANGLA, 'বাংলা CPU · Piper · No GPU quota'),
     ('bn_BD-aditi-parler', 'Aditi · বাংলা নারী · Expressive AI'),
     ('bn_BD-arjun-parler', 'Arjun · বাংলা পুরুষ · Expressive AI'),
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
@@ -98,7 +102,8 @@ def ensure_model(voice_name):
             return path
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix('.onnx.part')
-        url = f'{settings.PIPER_MODEL_BASE_URL}/{path.name}'
+        url = (f'https://huggingface.co/rhasspy/piper-voices/resolve/main/bn/bn_BD/google/medium/{path.name}'
+               if voice_name == PIPER_BANGLA else f'{settings.PIPER_MODEL_BASE_URL}/{path.name}')
         request = Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'})
         try:
             with urlopen(request, timeout=60) as response, open(partial, 'wb') as destination:
@@ -209,6 +214,8 @@ def synthesize_online(text, voice, speed, output_path):
 
 
 def synthesize(text, voice, language, speed, output_path, audio_format='wav', emotion='narration'):
+    if voice == PIPER_BANGLA:
+        return synthesize_bangla_cpu(text, speed, output_path, emotion)
     if voice in PARLER_VOICES:
         from .parler import synthesize_parler
         return synthesize_parler(text, voice, speed, output_path, emotion=emotion)
@@ -248,3 +255,46 @@ def synthesize(text, voice, language, speed, output_path, audio_format='wav', em
     except Exception as exc:
         output_path.unlink(missing_ok=True)
         raise TTSUnavailable(f'Audio generation failed: {exc}') from exc
+
+
+# Small pacing changes only: this model has no learned emotional style control.
+CPU_MOOD_PACE = {'happy': 1.04, 'sad': .92, 'angry': 1.03, 'fear': .97, 'surprise': 1.03}
+
+
+def synthesize_bangla_cpu(text, speed, output_path, emotion='auto'):
+    import miniaudio
+    from piper.config import SynthesisConfig
+    from .parler import EMOTION_STYLES
+    if emotion not in EMOTION_STYLES:
+        raise TTSUnavailable('Unsupported story mood.')
+    if emotion == 'auto':
+        from .story import plan_story
+        sections = plan_story(text)
+    else:
+        sections = [dict(text=chunk, emotion=emotion, pause_ms=250) for chunk in split_text(text, 250)]
+    if not sections:
+        raise TTSUnavailable('Enter text to synthesize.')
+    output = Path(output_path).with_suffix('.wav')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with _synthesis_lock, tempfile.TemporaryDirectory(prefix='bangla-cpu-', dir=output.parent) as directory:
+            loaded = _get_voice(PIPER_BANGLA)
+            with wave.open(str(output), 'wb') as destination:
+                destination.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+                for index, section in enumerate(sections):
+                    part = Path(directory) / 'part.wav'
+                    pace = float(speed) * CPU_MOOD_PACE.get(section['emotion'], 1)
+                    config = SynthesisConfig(speaker_id=0, length_scale=1 / pace, normalize_audio=True)
+                    with wave.open(str(part), 'wb') as wav_file:
+                        loaded.synthesize_wav(section['text'], wav_file, syn_config=config)
+                    audio = miniaudio.decode_file(str(part), nchannels=1, sample_rate=24000)
+                    if index:
+                        destination.writeframes(bytes(48 * section['pause_ms']))
+                    destination.writeframes(audio.samples.tobytes())
+        with wave.open(str(output), 'rb') as wav_file:
+            return wav_file.getnframes() / wav_file.getframerate()
+    except Exception as exc:
+        output.unlink(missing_ok=True)
+        if isinstance(exc, TTSUnavailable):
+            raise
+        raise TTSUnavailable('CPU Bangla generation failed. Please try again.') from exc

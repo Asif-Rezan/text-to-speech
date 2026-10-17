@@ -38,16 +38,24 @@
   }
 
   function updateVoicePrivacy() {
-    const expressive = voice.value.endsWith('-parler');
+    const cpu = voice.value === 'bn_BD-google-medium';
+    const expressive = cpu || voice.value.endsWith('-parler');
+    document.querySelector('#emotionControls .pane-help').textContent = cpu
+      ? 'গল্পের আবেগ স্বয়ংক্রিয়ভাবে শনাক্ত করে গতি ও বিরতি সামান্য বদলাবে। এই কণ্ঠে আবেগের অভিনয় নেই।'
+      : 'স্বয়ংক্রিয় আবেগ: গল্পের মেজাজ বুঝে কণ্ঠের আবেগ নিজে বদলাবে।';
     document.querySelector('#emotionControls').hidden = !expressive;
     emotion.disabled = !expressive;
     text.maxLength = voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
     document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
-    document.querySelector('#voiceLimitNote').textContent = expressive
+    document.querySelector('#voiceLimitNote').textContent = cpu
+      ? 'সর্বোচ্চ ২০,০০০ অক্ষর। CPU-তে অংশে অংশে তৈরি হয়ে একটি WAV হবে। ট্যাব খোলা রাখুন।'
+      : expressive
       ? 'ভারতীয় বাংলা উচ্চারণ · সর্বোচ্চ ২০,০০০ অক্ষর। Long scripts are generated in sections and combined into one WAV. Keep this tab open.'
       : 'সর্বোচ্চ ২০,০০০ অক্ষর।';
     const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
-    document.querySelector('#voicePrivacyNote').textContent = expressive
+    document.querySelector('#voicePrivacyNote').textContent = cpu
+      ? '◆ বাংলা অডিও এই সার্ভারের CPU-তে তৈরি হয়। কোনো বাইরের GPU কোটা নেই।'
+      : expressive
       ? '◆ Expressive Bangla sends your script to AI4Bharat on Hugging Face. Free shared GPU; availability and quotas may vary.'
       : localIndic
       ? '◆ IndicVoice runs on this server. Experimental Bangla support; up to 1,000 characters.'
@@ -219,7 +227,7 @@
     template.content.querySelector('.duration-badge').textContent = minutes ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
     const moodSequence = chunks.map(section => section.emotion).filter((mood, i, moods) => !i || mood !== moods[i - 1]);
     const summary = document.createElement('p'); summary.className = 'pane-help';
-    summary.textContent = 'স্বয়ংক্রিয় আবেগ: ' + moodSequence.slice(0, 8).map(mood => emotionNames[mood] || mood).join(' → ') + (moodSequence.length > 8 ? ' …' : '');
+    summary.textContent = (input.get('voice') === 'bn_BD-google-medium' ? 'শনাক্ত আবেগ (শুধু গতি ও বিরতি): ' : 'স্বয়ংক্রিয় আবেগ: ') + moodSequence.slice(0, 8).map(mood => emotionNames[mood] || mood).join(' → ') + (moodSequence.length > 8 ? ' …' : '');
     template.content.querySelector('.script-preview').after(summary);
     result.card_html = template.innerHTML;
     result.clip.card_html = result.card_html;
@@ -286,7 +294,7 @@
     showProgress();
     try {
       const input = new FormData(form);
-      const data = String(input.get('voice')).endsWith('-parler')
+      const data = (String(input.get('voice')).endsWith('-parler') || input.get('voice') === 'bn_BD-google-medium')
         ? await generateExpressive(input) : await requestGeneration(input);
       clearInterval(timer); bar.style.width = '100%'; percent.textContent = '100%'; message.textContent = 'Your audio is ready!'; steps.forEach(step => step.classList.add('active'));
       const grid = document.querySelector('#historyGrid');

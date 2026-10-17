@@ -14,7 +14,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .forms import SpeechForm
 from .models import SpeechGeneration
-from .services import VOICES, model_configs_available, synthesize
+from .services import VOICES, STORY_VOICES, model_configs_available, synthesize
 
 
 @require_http_methods(['GET', 'POST'])
@@ -23,7 +23,7 @@ def studio(request):
     wants_json = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     if request.method == 'POST' and form.is_valid():
         segment = request.POST.get('segment_text') if wants_json else None
-        if segment is not None and (form.cleaned_data['voice'] not in PARLER_VOICES or not segment.strip() or len(segment) > 250):
+        if segment is not None and (form.cleaned_data['voice'] not in STORY_VOICES or not segment.strip() or len(segment) > 250):
             return JsonResponse({'ok': False, 'message': 'Invalid speech section.', 'errors': {
                 'text': [{'message': 'Please reload the page and try again.'}]}}, status=422)
         delivery = request.POST.get('segment_emotion', form.cleaned_data['emotion'])
@@ -141,8 +141,8 @@ def story_plan(request):
     if not form.is_valid():
         return JsonResponse({'ok': False, 'message': 'Please correct the highlighted fields.',
                              'errors': form.errors.get_json_data()}, status=422)
-    if form.cleaned_data['voice'] not in PARLER_VOICES:
-        return JsonResponse({'ok': False, 'message': 'Select Aditi or Arjun for story narration.'}, status=422)
+    if form.cleaned_data['voice'] not in STORY_VOICES:
+        return JsonResponse({'ok': False, 'message': 'Select a Bangla story voice.'}, status=422)
     from .story import plan_story
     from .services import TTSUnavailable
     try:

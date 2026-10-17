@@ -54,3 +54,10 @@ training data, based on jhu-clsp/mmBERT-small. Quantized ONNX weights and tokeni
 are fetched into memory at runtime from pinned revision 1bc9627f189e5aa08b00cf525c3c86052067b81e.
 Runtime assets are not committed to or packaged with this application.
 License: https://www.apache.org/licenses/LICENSE-2.0
+
+
+CPU Bangla uses Rhasspy Piper `bn_BD-google-medium` (16-speaker Bengali voice).
+Source: https://huggingface.co/rhasspy/piper-voices/tree/main/bn/bn_BD/google/medium
+Dataset credits and CC BY-SA 4.0 / CMU notices are preserved in
+`models/piper/bn_BD-google-medium.MODEL_CARD`. Pacing changes are application
+settings; model weights are not modified.

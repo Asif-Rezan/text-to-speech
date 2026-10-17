@@ -1,6 +1,6 @@
 # Neural Voice Studio
 
-A Django text-to-speech studio with Bangla selected by default. Expressive Bangla uses AI4Bharat Indic Parler-TTS on its public Hugging Face GPU service, without an API key. Bangladesh Microsoft neural voices and sixteen local Piper voices remain available.
+A Django text-to-speech studio with CPU Piper Bangla selected by default. Expressive Bangla uses AI4Bharat Indic Parler-TTS on its public Hugging Face GPU service, without an API key. Bangladesh Microsoft neural voices and sixteen local Piper voices remain available.
 
 ## Setup
 
@@ -80,7 +80,7 @@ the 20,000-character limit. CPU-only PyTorch is selected on Linux. The function
 bundle requires Vercel large-functions support; do not enable this deployment
 without a real memory and synthesis check on the target runtime.
 
-### Expressive Bangla (default)
+### Expressive Bangla (optional)
 
 **Aditi** (female) and **Arjun** (male) use the actual AI4Bharat
 [Indic Parler-TTS](https://huggingface.co/ai4bharat/indic-parler-tts) model,
@@ -147,3 +147,15 @@ story planned in a few seconds after model loading. Vercel cold starts also need
 to download about 303 MB of model/tokenizer assets. These are cached in memory
 without using Vercel scratch disk space. Live deployment tests
 are needed to establish actual runtime behavior on Vercel.
+
+
+### CPU Bangla (default)
+
+`bn_BD-google-medium` uses Piper on the application server CPU. The 76.8 MB
+model is downloaded from the upstream Rhasspy collection and cached in /tmp on
+Vercel. No speech API key or external GPU quota is used. The existing CPU
+emotion detector plans passages; detected mood changes pacing slightly and
+paragraph/mood boundaries add pauses. Piper has no learned emotional acting.
+Each passage returns mono 24 kHz PCM WAV for browser merging and retry.
+The original model card and dataset attribution are in models/piper.
+Vercel CPU usage and execution limits still apply.

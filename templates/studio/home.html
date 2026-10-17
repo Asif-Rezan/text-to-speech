@@ -61,7 +61,7 @@
     <section class="hero container text-center">
       <div class="eyebrow">FREE ONLINE AI VOICE GENERATOR</div>
       <h1 lang="bn">আপনার কথায় <span class="text-gradient">প্রাণবন্ত বাংলা কণ্ঠ।</span></h1>
-      <p class="hero-copy mx-auto">বাংলায় গল্প, কথোপকথন ও ভয়েসওভার তৈরি করুন। Try expressive Bengali voices from Indic Parler-TTS, then listen and download your audio.</p>
+      <p class="hero-copy mx-auto">বাংলায় গল্প, কথোপকথন ও ভয়েসওভার তৈরি করুন। CPU বাংলা কণ্ঠে GPU কোটা ছাড়াই অডিও তৈরি করুন, শুনুন ও ডাউনলোড করুন।</p>
       <div class="hero-actions"><a class="primary-cta" href="#studio">Create free audio <span>→</span></a><a class="secondary-cta" href="#how-it-works">See how it works</a></div>
       <div class="d-flex justify-content-center gap-4 hero-stats">
         <span><strong>{{ form.fields.voice.choices|length }}</strong> voices</span><span><strong>9</strong> languages</span><span><strong>Zero</strong> API fees</span>
@@ -94,7 +94,7 @@
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
               <div id="emotionControls">
                 {{ form.emotion }}
-                <p class="pane-help" lang="bn">স্বয়ংক্রিয় আবেগ: গল্পের মেজাজ বুঝে কণ্ঠের আবেগ নিজে বদলাবে।</p>
+                <p class="pane-help" lang="bn">স্বয়ংক্রিয় আবেগ: গল্পের মেজাজ শনাক্ত করে গতি ও বিরতি সামান্য বদলাবে। CPU কণ্ঠে আবেগের অভিনয় নেই।</p>
                 <div class="field-error client-field-error" data-error-for="emotion">{% for error in form.emotion.errors %}{{ error }}{% endfor %}</div>
               </div>
               <p class="pane-help" id="voiceLimitNote">Expressive Bangla: up to 20,000 characters, combined into one WAV.</p>

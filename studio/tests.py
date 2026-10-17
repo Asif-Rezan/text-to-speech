@@ -38,9 +38,9 @@ class StudioTests(TestCase):
 
     def test_indicvoice_is_additional_and_has_its_own_text_limit(self):
         from .services import VOICES
-        self.assertEqual(len(VOICES), 23)
+        self.assertEqual(len(VOICES), 24)
         self.assertEqual(len(ONLINE_VOICES), 4)
-        self.assertEqual(len([v for v, _ in VOICES if v.startswith('bn_BD-')]), 7)
+        self.assertEqual(len([v for v, _ in VOICES if v.startswith('bn_BD-')]), 8)
         values = {'text': 'আমি বাংলায় কথা বলি।', 'language': 'bn_BD',
                   'voice': INDICVOICE_ID, 'speed': '1.00', 'format': 'wav'}
         self.assertTrue(SpeechForm(values).is_valid())
@@ -179,7 +179,7 @@ class ExpressiveBanglaTests(TestCase):
     def test_bangla_is_default_and_expressive_limit_is_validated(self):
         form = SpeechForm()
         self.assertEqual(form.fields['language'].initial, 'bn_BD')
-        self.assertEqual(form.fields['voice'].initial, 'bn_BD-aditi-parler')
+        self.assertEqual(form.fields['voice'].initial, 'bn_BD-google-medium')
         values = {'text': 'ক' * 1001, 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav'}
         self.assertTrue(SpeechForm(values).is_valid())
         values['text'] = 'ক' * 20000
@@ -394,3 +394,34 @@ class AutomaticStoryTests(TestCase):
         urlopen.return_value = io.BytesIO(data)
         with self.assertRaisesRegex(ValueError, 'larger'):
             _read_asset('test', hashlib.sha256(data).hexdigest(), len(data) - 1)
+
+    @patch('studio.story.plan_story')
+    def test_cpu_bangla_supports_automatic_plan(self, plan):
+        plan.return_value = [{'text': 'সে হাসল।', 'emotion': 'happy', 'confidence': .9, 'pause_ms': 250}]
+        response = self.client.post(reverse('studio:story-plan'), {
+            'text': 'সে হাসল।', 'language': 'bn_BD', 'voice': 'bn_BD-google-medium',
+            'speed': '1', 'format': 'wav', 'emotion': 'auto',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['plan'][0]['emotion'], 'happy')
+
+    @patch('studio.views.synthesize')
+    def test_cpu_bangla_streams_sections_without_history(self, generate):
+        def audio(text, voice, language, speed, output, fmt, emotion):
+            self.assertEqual(voice, 'bn_BD-google-medium')
+            self.assertEqual(emotion, 'sad')
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with wave.open(str(output), 'wb') as wav:
+                wav.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+                wav.writeframes(bytes(4800))
+            return .1
+        generate.side_effect = audio
+        with tempfile.TemporaryDirectory() as folder, override_settings(MEDIA_ROOT=folder):
+            response = self.client.post(reverse('studio:home'), {
+                'text': 'সে কাঁদল।', 'segment_text': 'সে কাঁদল।', 'segment_emotion': 'sad',
+                'language': 'bn_BD', 'voice': 'bn_BD-google-medium', 'speed': '1', 'format': 'wav', 'emotion': 'auto',
+            }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(response.status_code, 201)
+            self.assertTrue(b'"complete":true' in b''.join(response.streaming_content))
+            self.assertEqual(SpeechGeneration.objects.count(), 0)
+            self.assertFalse(list(Path(folder).rglob('*.wav')))
