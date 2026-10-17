@@ -1,5 +1,6 @@
 """Semantic story-emotion planning with a pinned, CPU-only ONNX classifier."""
 import hashlib
+import logging
 import re
 import tempfile
 import threading
@@ -160,4 +161,5 @@ def plan_story(text):
     except Exception as exc:
         if isinstance(exc, TTSUnavailable):
             raise
+        logging.getLogger(__name__).exception('Automatic story analysis failed')
         raise TTSUnavailable('Story emotion analysis is unavailable. Please try again shortly.') from exc
