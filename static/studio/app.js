@@ -20,6 +20,7 @@
     'Welcome to natural text to speech. Transform your words into clear, expressive audio quickly and beautifully.'
   ];
   let timer;
+  let expressiveJob;
 
   const voiceOptions = [...voice.options].map(option => ({value: option.value, label: option.textContent}));
 
@@ -171,8 +172,11 @@
     const chunks = splitScript(String(input.get('text')));
     if (!chunks.length) throw new Error('Enter text to synthesize.');
     clearInterval(timer);
-    const start = Date.now(), pcm = [];
-    let result;
+    const key = JSON.stringify(['text', 'voice', 'language', 'speed', 'title', 'format'].map(name => input.get(name)));
+    if (!expressiveJob || expressiveJob.key !== key) expressiveJob = {key, pcm: [], completed: 0, result: null};
+    const job = expressiveJob, pcm = job.pcm, start = Date.now();
+    let result = job.result;
+    timer = setInterval(() => { elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`; }, 1000);
     const progress = index => {
       const value = Math.round(index / chunks.length * 100);
       bar.style.width = `${value}%`; percent.textContent = `${value}%`;
@@ -180,16 +184,23 @@
       elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`;
       steps.forEach((step, i) => step.classList.toggle('active', i < 2));
     };
-    for (let index = 0; index < chunks.length; index++) {
+    for (let index = job.completed; index < chunks.length; index++) {
       progress(index);
       const section = new FormData();
       for (const [key, value] of input) section.append(key, value);
       section.set('segment_text', chunks[index]);
-      const data = await requestGeneration(section);
+      let data;
+      try { data = await requestGeneration(section); }
+      catch (error) {
+        if (job.completed) error.message += ` ${job.completed} of ${chunks.length} sections are saved in this tab. Click Generate again to resume; keep the script and voice unchanged.`;
+        throw error;
+      }
       if (!data.clip) throw new Error('The speech section did not include audio. Please reload and try again.');
+      const part = readPcm(await data.clip.blob.arrayBuffer());
       if (index) pcm.push(new Uint8Array(9600)); // 200 ms pause between sections.
-      pcm.push(readPcm(await data.clip.blob.arrayBuffer()));
+      pcm.push(part);
       if (!result) result = data;
+      job.result = result; job.completed = index + 1;
     }
     const merged = mergePcm(pcm);
     result.clip.blob = merged.blob;
@@ -198,6 +209,7 @@
     template.content.querySelector('.duration-badge').textContent = minutes ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
     result.card_html = template.innerHTML;
     result.clip.card_html = result.card_html;
+    expressiveJob = null;
     return result;
   }
 
@@ -249,6 +261,7 @@
   form.addEventListener('submit', async event => {
     event.preventDefault();
     clearErrors();
+    document.querySelector('#generationError').hidden = true;
     if (!form.reportValidity()) return;
     button.disabled = true;
     showProgress();
@@ -267,6 +280,8 @@
       bindDelete(grid); hideProgress(850);
       setTimeout(() => grid.querySelector('.audio-card').scrollIntoView({behavior: 'smooth', block: 'center'}), 900);
     } catch (error) {
+      const errorNote = document.querySelector('#generationError');
+      errorNote.textContent = error.message; errorNote.hidden = false;
       clearInterval(timer); progressCard.classList.add('error'); bar.style.width = '100%'; percent.textContent = 'Error'; message.textContent = error.message;
       const delay = error.validation ? 1500 : 2600;
       hideProgress(delay);

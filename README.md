@@ -102,7 +102,9 @@ at natural boundaries into 250-character sections, generates each in an
 independent Vercel request, and merges the PCM into one 24 kHz mono WAV.
 This avoids one long-running request exceeding Vercel duration limits. Keep
 the tab open until completion; shared GPU quotas can still interrupt a long job.
-Section requests do not create separate server history entries. The pace slider guides
+Section requests do not create separate server history entries. Completed
+sections remain in memory if a later request fails; submit the unchanged script
+and voice again to resume in the same tab. Refreshing discards an unfinished job. The pace slider guides
 the model through a slow/moderate/fast prompt; it does not guarantee an exact
 playback-speed multiplier. Nabanita and Pradeep remain available for Bangladesh pronunciation.
 Audio is delivered in the original generation response and saved in the browser
