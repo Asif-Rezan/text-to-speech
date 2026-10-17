@@ -41,27 +41,21 @@
     const cpu = voice.value === 'bn_BD-google-medium';
     const expressive = cpu || voice.value.endsWith('-parler');
     document.querySelector('#emotionControls .pane-help').textContent = cpu
-      ? 'Automatic mood detection adjusts pacing and pauses. This voice does not perform emotional acting.'
+      ? 'Automatic mood detection adjusts pacing and pauses.'
       : 'Automatic emotion: speech delivery changes to match the story’s mood.';
     document.querySelector('#emotionControls').hidden = !expressive;
     emotion.disabled = !expressive;
     text.maxLength = voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
     document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
-    document.querySelector('#voiceLimitNote').textContent = cpu
-      ? 'Up to 20,000 characters. CPU-generated sections are combined into one WAV. Keep this tab open.'
-      : expressive
-      ? 'Indian Bengali accent · Up to 20,000 characters. Long scripts are generated in sections and combined into one WAV. Keep this tab open.'
-      : 'Up to 20,000 characters.';
     const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
-    document.querySelector('#voicePrivacyNote').textContent = cpu
-      ? '◆ Bangla audio is generated on this server’s CPU. No external GPU quota.'
-      : expressive
-      ? '◆ Expressive Bangla sends your script to AI4Bharat on Hugging Face. Free shared GPU; availability and quotas may vary.'
-      : localIndic
-      ? '◆ IndicVoice runs on this server. Experimental Bangla support; up to 1,000 characters.'
-      : language.value === 'bn_BD'
-        ? '◆ Online Bangla voices send your script to Microsoft. No API key required.'
-        : '◆ Text and audio stay on this server for local voices.';
+    document.querySelector('#voiceLimitNote').textContent = localIndic
+      ? 'Up to 1,000 characters per recording.'
+      : 'Up to 20,000 characters per recording.';
+    const note = document.querySelector('#voicePrivacyNote');
+    note.hidden = cpu || localIndic || language.value !== 'bn_BD';
+    note.textContent = expressive && !cpu
+      ? 'Your script is processed by AI4Bharat on Hugging Face to generate audio.'
+      : 'Your script is processed by Microsoft to generate audio.';
   }
 
   function update() {
@@ -110,7 +104,7 @@
       bar.style.width = `${value}%`; percent.textContent = `${value}%`; elapsedLabel.textContent = `${elapsed}s elapsed`;
       const stage = value < 34 ? 0 : value < 78 ? 1 : 2;
       steps.forEach((step, index) => step.classList.toggle('active', index <= stage));
-      message.textContent = ['Preparing voice model and script…', language.value === 'bn_BD' && voice.value !== 'bn_BD-indicvoice-experimental' ? 'Generating natural Bangla speech online…' : 'Synthesizing neural audio locally…', 'Polishing the final waveform…'][stage];
+      message.textContent = ['Preparing your script…', 'Creating your recording…', 'Finishing your audio…'][stage];
     }, 1000);
   }
 
@@ -197,7 +191,7 @@
     const progress = index => {
       const value = Math.round(index / chunks.length * 100);
       bar.style.width = `${value}%`; percent.textContent = `${value}%`;
-      message.textContent = `Generating Bangla section ${index + 1} of ${chunks.length} · ${emotionNames[chunks[index].emotion] || chunks[index].emotion}… Keep this tab open.`;
+      message.textContent = `Generating Bangla section ${index + 1} of ${chunks.length} · ${emotionNames[chunks[index].emotion] || chunks[index].emotion}… Please keep this page open.`;
       elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`;
       steps.forEach((step, i) => step.classList.toggle('active', i < 2));
     };

@@ -57,14 +57,13 @@
   </nav>
 
   <main>
-    {% if temporary_storage %}<p class="container" role="note">Temporary workspace: download your audio when it is ready. Audio and history may disappear when the server restarts or scales.</p>{% endif %}
     <section class="hero container text-center">
       <div class="eyebrow">FREE ONLINE AI VOICE GENERATOR</div>
       <h1>Bring your words to life with <span class="text-gradient">Bangla voices.</span></h1>
       <p class="hero-copy mx-auto">Create stories, dialogue, and voiceovers in Bangla. Listen to your audio and download it as a WAV file.</p>
       <div class="hero-actions"><a class="primary-cta" href="#studio">Create free audio <span>→</span></a><a class="secondary-cta" href="#how-it-works">See how it works</a></div>
       <div class="d-flex justify-content-center gap-4 hero-stats">
-        <span><strong>{{ form.fields.voice.choices|length }}</strong> voices</span><span><strong>9</strong> languages</span><span><strong>Zero</strong> API fees</span>
+        <span><strong>{{ form.fields.voice.choices|length }}</strong> voices</span><span><strong>9</strong> languages</span><span><strong>Free</strong> to create</span>
       </div>
     </section>
 
@@ -94,10 +93,10 @@
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
               <div id="emotionControls">
                 {{ form.emotion }}
-                <p class="pane-help">Automatic mood detection adjusts pacing and pauses. The CPU voice does not perform emotional acting.</p>
+                <p class="pane-help">Automatic mood detection adjusts pacing and pauses.</p>
                 <div class="field-error client-field-error" data-error-for="emotion">{% for error in form.emotion.errors %}{{ error }}{% endfor %}</div>
               </div>
-              <p class="pane-help" id="voiceLimitNote">Expressive Bangla: up to 20,000 characters, combined into one WAV.</p>
+              <p class="pane-help" id="voiceLimitNote">Create up to 20,000 characters in one recording.</p>
               <div class="d-flex justify-content-between"><label for="id_speed">Speaking pace</label><output id="speedValue">1.00×</output></div>
               {{ form.speed }}
               <div class="field-error client-field-error" data-error-for="speed">{% for error in form.speed.errors %}{{ error }}{% endfor %}</div>
@@ -106,7 +105,7 @@
               <div class="field-error client-field-error" data-error-for="format">{% for error in form.format.errors %}{{ error }}{% endfor %}</div>
               <button class="generate-btn" type="submit" id="generateBtn"><span class="btn-icon">▶</span><span>Generate speech</span></button>
               <p class="field-error" id="generationError" role="alert" hidden></p>
-              <p class="privacy-note" id="voicePrivacyNote">◆ Text and audio stay on this server for local voices.</p>
+              <p class="privacy-note" id="voicePrivacyNote">Create, listen, and download your recording.</p>
             </div>
           </div>
         </form>
@@ -131,7 +130,7 @@
       <div class="how-grid"><article><b>1</b><h3>Paste your text</h3><p>Enter anything from a short message to a 20,000-character article or narration.</p></article><article><b>2</b><h3>Choose an AI voice</h3><p>Select a language, voice, and speaking speed that fits your content.</p></article><article><b>3</b><h3>Generate and download</h3><p>Preview your text-to-audio result and download it as one WAV file.</p></article></div>
       <div class="faq-wrap" id="faq"><span class="eyebrow">COMMON QUESTIONS</span><h2>Free text-to-speech FAQ</h2>
         <details><summary>How can I convert text to speech for free?</summary><p>Paste your script into the editor, select a language and voice, adjust the pace, and click Generate speech. When processing finishes, play or download your audio.</p></details>
-        <details><summary>How much text can I turn into voice?</summary><p>Expressive Bangla and standard voices support up to 20,000 characters. Long Bangla scripts are generated in sections and combined into one WAV in your browser. Keep the tab open until generation finishes.</p></details>
+        <details><summary>How much text can I turn into voice?</summary><p>Create recordings from scripts up to 20,000 characters. Keep this page open while your recording is being prepared.</p></details>
         <details><summary>What languages does the AI voice generator support?</summary><p>Available languages include US and UK English, Spanish, French, German, Hindi, Brazilian Portuguese, Mandarin Chinese, and Bangla.</p></details>
         <details><summary>Can I use text to speech for videos and podcasts?</summary><p>You can create narration and voiceover drafts for videos, podcasts, learning material, presentations, and accessibility projects. Always review the applicable content and voice licensing terms for your intended use.</p></details>
       </div>

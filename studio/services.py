@@ -24,11 +24,11 @@ PIPER_BANGLA = 'bn_BD-google-medium'
 STORY_VOICES = {*PARLER_VOICES, PIPER_BANGLA}
 
 VOICES = [
-    ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female · Online'),
-    ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male · Online'),
-    (PIPER_BANGLA, 'Bangla CPU · Piper · Basic voice'),
-    ('bn_BD-aditi-parler', 'Aditi · Bengali Female · Expressive AI'),
-    ('bn_BD-arjun-parler', 'Arjun · Bengali Male · Expressive AI'),
+    ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female'),
+    ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male'),
+    (PIPER_BANGLA, 'Bengali · Standard'),
+    ('bn_BD-aditi-parler', 'Aditi · Bengali Female · Expressive'),
+    ('bn_BD-arjun-parler', 'Arjun · Bengali Male · Expressive'),
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
     ('en_US-hfc_male-medium', 'HFC · US Male'),
     ('en_US-amy-medium', 'Amy · US Female'),
@@ -45,9 +45,9 @@ VOICES = [
     ('hi_IN-priyamvada-medium', 'Priyamvada · Hindi Female'),
     ('pt_BR-faber-medium', 'Faber · Portuguese Male'),
     ('zh_CN-huayan-medium', 'Huayan · Mandarin Female'),
-    ('bn_BD-tanishaa-neural', 'Tanishaa · Indian Bengali Female · Online'),
-    ('bn_BD-bashkar-neural', 'Bashkar · Indian Bengali Male · Online'),
-    ('bn_BD-indicvoice-experimental', 'IndicVoice-82M · Female · Experimental'),
+    ('bn_BD-tanishaa-neural', 'Tanishaa · Indian Bengali Female'),
+    ('bn_BD-bashkar-neural', 'Bashkar · Indian Bengali Male'),
+    ('bn_BD-indicvoice-experimental', 'Bengali Female · Preview'),
 ]
 
 ONLINE_VOICES = {
