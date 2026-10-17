@@ -17,16 +17,16 @@ MAX_CHARS = 20000
 MAX_SECONDS = 220
 
 EMOTION_STYLES = {
-    'auto': ('স্বয়ংক্রিয় আবেগ / Automatic', 'natural story narration, matching the emotion expressed in the text'),
-    'narration': ('গল্প বলা / Storytelling', 'an expressive storytelling tone, with varied intonation and natural dramatic pauses'),
-    'conversation': ('কথোপকথন / Conversation', 'a friendly, conversational tone, sounding engaged and natural'),
-    'happy': ('আনন্দ / Happy', 'a cheerful, happy tone, sounding joyful and animated'),
-    'sad': ('দুঃখ / Sad', 'a sad, subdued tone, sounding sorrowful with a gentle, soft delivery'),
-    'angry': ('রাগ / Angry', 'an angry, forceful tone, sounding frustrated and emphatic'),
-    'fear': ('ভয় / Fear', 'a fearful, nervous tone, sounding tense and worried'),
-    'surprise': ('বিস্ময় / Surprise', 'a surprised, astonished tone, with lively changes in pitch'),
-    'news': ('সংবাদ / News', 'a clear, composed newsreader tone, sounding professional and confident'),
-    'neutral': ('স্বাভাবিক / Neutral', 'a clear, neutral tone, with no emotional emphasis'),
+    'auto': ('Automatic', 'natural story narration, matching the emotion expressed in the text'),
+    'narration': ('Storytelling', 'an expressive storytelling tone, with varied intonation and natural dramatic pauses'),
+    'conversation': ('Conversation', 'a friendly, conversational tone, sounding engaged and natural'),
+    'happy': ('Happy', 'a cheerful, happy tone, sounding joyful and animated'),
+    'sad': ('Sad', 'a sad, subdued tone, sounding sorrowful with a gentle, soft delivery'),
+    'angry': ('Angry', 'an angry, forceful tone, sounding frustrated and emphatic'),
+    'fear': ('Fear', 'a fearful, nervous tone, sounding tense and worried'),
+    'surprise': ('Surprise', 'a surprised, astonished tone, with lively changes in pitch'),
+    'news': ('News', 'a clear, composed newsreader tone, sounding professional and confident'),
+    'neutral': ('Neutral', 'a clear, neutral tone, with no emotional emphasis'),
 }
 EMOTION_CHOICES = [(key, label) for key, (label, _) in EMOTION_STYLES.items()]
 

@@ -60,8 +60,8 @@
     {% if temporary_storage %}<p class="container" role="note">Temporary workspace: download your audio when it is ready. Audio and history may disappear when the server restarts or scales.</p>{% endif %}
     <section class="hero container text-center">
       <div class="eyebrow">FREE ONLINE AI VOICE GENERATOR</div>
-      <h1 lang="bn">আপনার কথায় <span class="text-gradient">প্রাণবন্ত বাংলা কণ্ঠ।</span></h1>
-      <p class="hero-copy mx-auto">বাংলায় গল্প, কথোপকথন ও ভয়েসওভার তৈরি করুন। বাংলাদেশি বাংলা কণ্ঠে অডিও তৈরি করুন, শুনুন ও ডাউনলোড করুন।</p>
+      <h1>Bring your words to life with <span class="text-gradient">Bangla voices.</span></h1>
+      <p class="hero-copy mx-auto">Create stories, dialogue, and voiceovers in Bangla. Listen to your audio and download it as a WAV file.</p>
       <div class="hero-actions"><a class="primary-cta" href="#studio">Create free audio <span>→</span></a><a class="secondary-cta" href="#how-it-works">See how it works</a></div>
       <div class="d-flex justify-content-center gap-4 hero-stats">
         <span><strong>{{ form.fields.voice.choices|length }}</strong> voices</span><span><strong>9</strong> languages</span><span><strong>Zero</strong> API fees</span>
@@ -88,13 +88,13 @@
             </div>
             <div class="col-lg-4 controls-pane">
               <div class="pane-heading"><div><span class="step">02</span><h2>Voice settings</h2></div><p class="pane-help">Fine-tune how your audio sounds.</p></div>
-              <label for="id_language">ভাষা / Language</label>{{ form.language }}
-              <label for="id_voice">কণ্ঠ / Voice</label>{{ form.voice }}
+              <label for="id_language">Language</label>{{ form.language }}
+              <label for="id_voice">Voice</label>{{ form.voice }}
               <div class="field-error client-field-error" data-error-for="language">{% for error in form.language.errors %}{{ error }}{% endfor %}</div>
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
               <div id="emotionControls">
                 {{ form.emotion }}
-                <p class="pane-help" lang="bn">স্বয়ংক্রিয় আবেগ: গল্পের মেজাজ শনাক্ত করে গতি ও বিরতি সামান্য বদলাবে। CPU কণ্ঠে আবেগের অভিনয় নেই।</p>
+                <p class="pane-help">Automatic mood detection adjusts pacing and pauses. The CPU voice does not perform emotional acting.</p>
                 <div class="field-error client-field-error" data-error-for="emotion">{% for error in form.emotion.errors %}{{ error }}{% endfor %}</div>
               </div>
               <p class="pane-help" id="voiceLimitNote">Expressive Bangla: up to 20,000 characters, combined into one WAV.</p>
@@ -104,7 +104,7 @@
               <div class="range-labels"><span>Measured</span><span>Natural</span><span>Energetic</span></div>
               <label for="id_format">Export format</label>{{ form.format }}
               <div class="field-error client-field-error" data-error-for="format">{% for error in form.format.errors %}{{ error }}{% endfor %}</div>
-              <button class="generate-btn" type="submit" id="generateBtn"><span class="btn-icon">▶</span><span>কণ্ঠ তৈরি করুন / Generate speech</span></button>
+              <button class="generate-btn" type="submit" id="generateBtn"><span class="btn-icon">▶</span><span>Generate speech</span></button>
               <p class="field-error" id="generationError" role="alert" hidden></p>
               <p class="privacy-note" id="voicePrivacyNote">◆ Text and audio stay on this server for local voices.</p>
             </div>

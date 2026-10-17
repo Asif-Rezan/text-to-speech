@@ -7,7 +7,7 @@ from .services import INDICVOICE_ID, LANGUAGES, VOICES
 
 
 class SpeechForm(forms.Form):
-    text = forms.CharField(max_length=20000, widget=forms.Textarea(attrs={'rows': 10, 'placeholder': 'এখানে আপনার বাংলা গল্প, কথোপকথন বা ভয়েসওভারের লেখা দিন…', 'autofocus': True}))
+    text = forms.CharField(max_length=20000, widget=forms.Textarea(attrs={'rows': 10, 'placeholder': 'Enter your Bangla story, dialogue, or voiceover script here…', 'autofocus': True}))
     title = forms.CharField(max_length=120, required=False, widget=forms.TextInput(attrs={'placeholder': 'Optional project title'}))
     language = forms.ChoiceField(choices=LANGUAGES, initial='bn_BD')
     voice = forms.ChoiceField(choices=VOICES, initial='bn_BD-nabanita-neural')

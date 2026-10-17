@@ -13,7 +13,7 @@ from django.conf import settings
 from .parler import VOICES as PARLER_VOICES
 
 LANGUAGES = [
-    ('bn_BD', 'বাংলা — Bangla'),
+    ('bn_BD', 'Bangla — Bangladesh'),
     ('en_US', 'English — US'), ('en_GB', 'English — UK'),
     ('es_ES', 'Spanish — Spain'), ('fr_FR', 'French — France'),
     ('de_DE', 'German — Germany'), ('hi_IN', 'Hindi — India'),
@@ -24,11 +24,11 @@ PIPER_BANGLA = 'bn_BD-google-medium'
 STORY_VOICES = {*PARLER_VOICES, PIPER_BANGLA}
 
 VOICES = [
-    ('bn_BD-nabanita-neural', 'Nabanita · বাংলাদেশি বাংলা নারী · Online'),
-    ('bn_BD-pradeep-neural', 'Pradeep · বাংলাদেশি বাংলা পুরুষ · Online'),
-    (PIPER_BANGLA, 'বাংলা CPU · Piper · Basic voice'),
-    ('bn_BD-aditi-parler', 'Aditi · বাংলা নারী · Expressive AI'),
-    ('bn_BD-arjun-parler', 'Arjun · বাংলা পুরুষ · Expressive AI'),
+    ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female · Online'),
+    ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male · Online'),
+    (PIPER_BANGLA, 'Bangla CPU · Piper · Basic voice'),
+    ('bn_BD-aditi-parler', 'Aditi · Bengali Female · Expressive AI'),
+    ('bn_BD-arjun-parler', 'Arjun · Bengali Male · Expressive AI'),
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
     ('en_US-hfc_male-medium', 'HFC · US Male'),
     ('en_US-amy-medium', 'Amy · US Female'),

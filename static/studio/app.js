@@ -41,20 +41,20 @@
     const cpu = voice.value === 'bn_BD-google-medium';
     const expressive = cpu || voice.value.endsWith('-parler');
     document.querySelector('#emotionControls .pane-help').textContent = cpu
-      ? 'গল্পের আবেগ স্বয়ংক্রিয়ভাবে শনাক্ত করে গতি ও বিরতি সামান্য বদলাবে। এই কণ্ঠে আবেগের অভিনয় নেই।'
-      : 'স্বয়ংক্রিয় আবেগ: গল্পের মেজাজ বুঝে কণ্ঠের আবেগ নিজে বদলাবে।';
+      ? 'Automatic mood detection adjusts pacing and pauses. This voice does not perform emotional acting.'
+      : 'Automatic emotion: speech delivery changes to match the story’s mood.';
     document.querySelector('#emotionControls').hidden = !expressive;
     emotion.disabled = !expressive;
     text.maxLength = voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
     document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
     document.querySelector('#voiceLimitNote').textContent = cpu
-      ? 'সর্বোচ্চ ২০,০০০ অক্ষর। CPU-তে অংশে অংশে তৈরি হয়ে একটি WAV হবে। ট্যাব খোলা রাখুন।'
+      ? 'Up to 20,000 characters. CPU-generated sections are combined into one WAV. Keep this tab open.'
       : expressive
-      ? 'ভারতীয় বাংলা উচ্চারণ · সর্বোচ্চ ২০,০০০ অক্ষর। Long scripts are generated in sections and combined into one WAV. Keep this tab open.'
-      : 'সর্বোচ্চ ২০,০০০ অক্ষর।';
+      ? 'Indian Bengali accent · Up to 20,000 characters. Long scripts are generated in sections and combined into one WAV. Keep this tab open.'
+      : 'Up to 20,000 characters.';
     const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
     document.querySelector('#voicePrivacyNote').textContent = cpu
-      ? '◆ বাংলা অডিও এই সার্ভারের CPU-তে তৈরি হয়। কোনো বাইরের GPU কোটা নেই।'
+      ? '◆ Bangla audio is generated on this server’s CPU. No external GPU quota.'
       : expressive
       ? '◆ Expressive Bangla sends your script to AI4Bharat on Hugging Face. Free shared GPU; availability and quotas may vary.'
       : localIndic
@@ -185,7 +185,7 @@
     if (!expressiveJob || expressiveJob.key !== key) expressiveJob = {key, pcm: [], completed: 0, result: null, plan: null};
     const job = expressiveJob, pcm = job.pcm, start = Date.now();
     let result = job.result;
-    message.textContent = 'গল্পের আবেগ বিশ্লেষণ করা হচ্ছে… Analyzing the story’s mood.';
+    message.textContent = 'Analyzing the story’s mood…';
     timer = setInterval(() => { elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`; }, 1000);
     if (!job.plan) {
       const analysis = await requestGeneration(input, form.dataset.planUrl);
@@ -193,7 +193,7 @@
     }
     const chunks = job.plan;
     if (!chunks?.length) throw new Error('The story analysis did not return any passages.');
-    const emotionNames = {narration: 'গল্প বলা', happy: 'আনন্দ', sad: 'দুঃখ', angry: 'রাগ', fear: 'ভয়', surprise: 'বিস্ময়'};
+    const emotionNames = {narration: 'Storytelling', happy: 'Happy', sad: 'Sad', angry: 'Angry', fear: 'Fear', surprise: 'Surprise'};
     const progress = index => {
       const value = Math.round(index / chunks.length * 100);
       bar.style.width = `${value}%`; percent.textContent = `${value}%`;
@@ -227,7 +227,7 @@
     template.content.querySelector('.duration-badge').textContent = minutes ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
     const moodSequence = chunks.map(section => section.emotion).filter((mood, i, moods) => !i || mood !== moods[i - 1]);
     const summary = document.createElement('p'); summary.className = 'pane-help';
-    summary.textContent = (input.get('voice') === 'bn_BD-google-medium' ? 'শনাক্ত আবেগ (শুধু গতি ও বিরতি): ' : 'স্বয়ংক্রিয় আবেগ: ') + moodSequence.slice(0, 8).map(mood => emotionNames[mood] || mood).join(' → ') + (moodSequence.length > 8 ? ' …' : '');
+    summary.textContent = (input.get('voice') === 'bn_BD-google-medium' ? 'Detected mood (pacing and pauses only): ' : 'Automatic emotion: ') + moodSequence.slice(0, 8).map(mood => emotionNames[mood] || mood).join(' → ') + (moodSequence.length > 8 ? ' …' : '');
     template.content.querySelector('.script-preview').after(summary);
     result.card_html = template.innerHTML;
     result.clip.card_html = result.card_html;
@@ -246,6 +246,22 @@
       for (const clip of clips.sort((a, b) => a.created - b.created).slice(-6)) {
         let card = grid.querySelector(`[data-generation-id="${CSS.escape(clip.id)}"]`);
         if (!card) { grid.insertAdjacentHTML('afterbegin', clip.card_html); card = grid.firstElementChild; }
+        // Older saved clips keep their scripts, but interface labels use English.
+        const legacyLabels = {
+          'শনাক্ত আবেগ (শুধু গতি ও বিরতি): ': 'Detected mood (pacing and pauses only): ',
+          'স্বয়ংক্রিয় আবেগ: ': 'Automatic emotion: ',
+          'স্বয়ংক্রিয় আবেগ / Automatic': 'Automatic',
+          'গল্প বলা / Storytelling': 'Storytelling', 'কথোপকথন / Conversation': 'Conversation',
+          'আনন্দ / Happy': 'Happy', 'দুঃখ / Sad': 'Sad', 'রাগ / Angry': 'Angry',
+          'ভয় / Fear': 'Fear', 'বিস্ময় / Surprise': 'Surprise', 'সংবাদ / News': 'News',
+          'স্বাভাবিক / Neutral': 'Neutral', 'গল্প বলা': 'Storytelling',
+          'আনন্দ': 'Happy', 'দুঃখ': 'Sad', 'রাগ': 'Angry', 'ভয়': 'Fear', 'বিস্ময়': 'Surprise',
+        };
+        card.querySelectorAll('.card-top p, .pane-help').forEach(label => {
+          let value = label.textContent;
+          for (const [before, after] of Object.entries(legacyLabels)) value = value.split(before).join(after);
+          label.textContent = value;
+        });
         attachAudio(card, clip);
         document.querySelector('#historySection').classList.remove('d-none');
       }

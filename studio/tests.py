@@ -313,7 +313,7 @@ class ExpressiveBanglaTests(TestCase):
 class AutomaticStoryTests(TestCase):
     def test_story_mode_is_automatic_and_has_no_visible_emotion_picker(self):
         response = self.client.get(reverse('studio:home'))
-        self.assertContains(response, 'স্বয়ংক্রিয় আবেগ')
+        self.assertContains(response, 'Automatic mood detection')
         self.assertNotContains(response, '<select name="emotion"')
         self.assertEqual(SpeechForm().fields['emotion'].initial, 'auto')
 
