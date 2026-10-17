@@ -17,6 +17,7 @@ MAX_CHARS = 20000
 MAX_SECONDS = 220
 
 EMOTION_STYLES = {
+    'auto': ('স্বয়ংক্রিয় আবেগ / Automatic', 'natural story narration, matching the emotion expressed in the text'),
     'narration': ('গল্প বলা / Storytelling', 'an expressive storytelling tone, with varied intonation and natural dramatic pauses'),
     'conversation': ('কথোপকথন / Conversation', 'a friendly, conversational tone, sounding engaged and natural'),
     'happy': ('আনন্দ / Happy', 'a cheerful, happy tone, sounding joyful and animated'),
@@ -94,11 +95,17 @@ def synthesize_parler(text, voice, speed, output_path, emotion='narration'):
     deadline = time.monotonic() + MAX_SECONDS
     frames = 0
     try:
+        if emotion == 'auto':
+            from .story import plan_story
+            sections = plan_story(text)
+        else:
+            sections = [{'text': chunk, 'emotion': emotion, 'pause_ms': 200}
+                        for chunk in split_text(text, max_chars=250)]
         with tempfile.TemporaryDirectory(prefix='parler-', dir=output.parent) as directory:
             with wave.open(str(output), 'wb') as destination:
                 destination.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
-                for index, chunk in enumerate(split_text(text, max_chars=250)):
-                    url = _generate(chunk, VOICES[voice], speed, deadline, emotion=emotion)
+                for index, section in enumerate(sections):
+                    url = _generate(section['text'], VOICES[voice], speed, deadline, emotion=section['emotion'])
                     source = Path(directory) / f'{index}.audio'
                     if time.monotonic() >= deadline:
                         raise TimeoutError
@@ -115,8 +122,9 @@ def synthesize_parler(text, voice, speed, output_path, emotion='narration'):
                         raise ValueError('Empty audio')
                     if frames:
                         # A short sentence pause avoids abrupt joins between GPU calls.
-                        destination.writeframes(b'\0\0' * 4800)
-                        frames += 4800
+                        pause_frames = round(section.get('pause_ms', 200) * 24)
+                        destination.writeframes(b'\0\0' * pause_frames)
+                        frames += pause_frames
                     destination.writeframes(decoded.samples.tobytes())
                     frames += len(decoded.samples)
         return frames / 24000

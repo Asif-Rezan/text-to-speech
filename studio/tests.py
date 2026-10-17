@@ -242,7 +242,7 @@ class ExpressiveBanglaTests(TestCase):
         with tempfile.TemporaryDirectory() as directory, override_settings(MEDIA_ROOT=directory):
             with patch('studio.views.synthesize', side_effect=generate):
                 response = self.client.post(reverse('studio:home'), {
-                    'text': script, 'segment_text': segment, 'language': 'bn_BD',
+                    'text': script, 'segment_text': segment, 'segment_emotion': 'narration', 'language': 'bn_BD',
                     'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav',
                 }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
                 self.assertEqual(response.status_code, 201)
@@ -308,3 +308,74 @@ class ExpressiveBanglaTests(TestCase):
                 self.assertEqual(synthesis.call_args.kwargs['emotion'], 'happy')
                 self.assertIn('Happy', packets[0]['card_html'])
                 self.assertTrue(packets[-1]['complete'])
+
+
+class AutomaticStoryTests(TestCase):
+    def test_story_mode_is_automatic_and_has_no_visible_emotion_picker(self):
+        response = self.client.get(reverse('studio:home'))
+        self.assertContains(response, 'স্বয়ংক্রিয় আবেগ')
+        self.assertNotContains(response, '<select name="emotion"')
+        self.assertEqual(SpeechForm().fields['emotion'].initial, 'auto')
+
+    @patch('studio.story.classify_passages')
+    def test_joy_to_grief_to_fear_keeps_passages_separate(self, classify):
+        from studio.story import plan_story
+        parts = ['আজ তার আনন্দের দিন।', 'পরদিন সে শোকে ভেঙে পড়ল।', 'অন্ধকারে সে ভয় পাচ্ছিল।']
+        classify.return_value = [{'joy': .9, 'neutral': .05}, {'grief': .95, 'neutral': .01}, {'fear': .9, 'neutral': .02}]
+        plan = plan_story('\n\n'.join(parts))
+        self.assertEqual([item['emotion'] for item in plan], ['happy', 'sad', 'fear'])
+        self.assertEqual([item['text'] for item in plan], parts)
+        self.assertEqual(plan[1]['pause_ms'], 500)
+
+    @patch('studio.story.classify_passages')
+    def test_short_continuation_uses_paragraph_context(self, classify):
+        from studio.story import plan_story
+        classify.return_value = [{'neutral': .9}, {'joy': .85}, {'joy': .8}]
+        plan = plan_story('সে দরজা খুলল। সবাই আনন্দে হেসে উঠল।')
+        self.assertEqual(len(plan), 1)
+        self.assertEqual(plan[0]['emotion'], 'happy')
+
+    @patch('studio.story.classify_passages')
+    def test_uncertain_context_stays_narration_without_a_forced_mood(self, classify):
+        from studio.story import plan_story
+        classify.return_value = [{'sadness': .4, 'joy': .37, 'neutral': .3}]
+        self.assertEqual(plan_story('সে জানালার দিকে তাকাল।')[0]['emotion'], 'narration')
+
+    @patch('studio.story.classify_passages')
+    def test_twenty_thousand_character_story_preserves_content(self, classify):
+        from studio.story import plan_story
+        script = ('সে নদীর ধারে দাঁড়িয়ে ছিল। ' * 700).strip()
+        classify.side_effect = lambda texts: [{'neutral': .9} for _ in texts]
+        plan = plan_story(script)
+        self.assertTrue(all(len(item['text']) <= 250 for item in plan))
+        self.assertEqual(''.join(item['text'] for item in plan).replace(' ', ''), script.replace(' ', ''))
+
+    @patch('studio.story.plan_story')
+    def test_planning_endpoint_uses_full_story_without_generating_audio(self, plan):
+        plan.return_value = [{'text': 'সে হাসল।', 'emotion': 'happy', 'pause_ms': 0}]
+        response = self.client.post(reverse('studio:story-plan'), {
+            'text': 'সে হাসল।', 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler',
+            'speed': '1', 'format': 'wav', 'emotion': 'auto',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['plan'][0]['emotion'], 'happy')
+        plan.assert_called_once_with('সে হাসল।')
+        self.assertFalse(SpeechGeneration.objects.exists())
+
+    @patch('studio.views.synthesize')
+    def test_automatic_segment_uses_detected_delivery_and_labels_card_auto(self, synthesize):
+        synthesize.side_effect = TTSUnavailable('Test service unavailable')
+        response = self.client.post(reverse('studio:home'), {
+            'text': 'সে খুশি ছিল। তারপর কাঁদল।', 'segment_text': 'তারপর কাঁদল।', 'segment_emotion': 'sad',
+            'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav', 'emotion': 'auto',
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(synthesize.call_args.kwargs['emotion'], 'sad')
+
+    @patch('studio.story.plan_story', side_effect=TTSUnavailable('Story emotion analysis is unavailable.'))
+    def test_analysis_failure_is_reported_without_silent_generic_voice(self, plan):
+        response = self.client.post(reverse('studio:story-plan'), {
+            'text': 'সে হাসল।', 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav',
+        })
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(response.json()['ok'])

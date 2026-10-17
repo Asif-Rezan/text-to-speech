@@ -155,8 +155,8 @@
     return data;
   }
 
-  async function requestGeneration(input) {
-    const response = await fetch(form.action || window.location.href, {
+  async function requestGeneration(input, url = form.action || window.location.href) {
+    const response = await fetch(url, {
       method: 'POST', body: input,
       headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
     });
@@ -172,18 +172,24 @@
   const {splitScript, readPcm, mergePcm} = window.NeuralVoiceAudio;
 
   async function generateExpressive(input) {
-    const chunks = splitScript(String(input.get('text')));
-    if (!chunks.length) throw new Error('Enter text to synthesize.');
     clearInterval(timer);
     const key = JSON.stringify(['text', 'voice', 'language', 'speed', 'title', 'format', 'emotion'].map(name => input.get(name)));
-    if (!expressiveJob || expressiveJob.key !== key) expressiveJob = {key, pcm: [], completed: 0, result: null};
+    if (!expressiveJob || expressiveJob.key !== key) expressiveJob = {key, pcm: [], completed: 0, result: null, plan: null};
     const job = expressiveJob, pcm = job.pcm, start = Date.now();
     let result = job.result;
+    message.textContent = 'গল্পের আবেগ বিশ্লেষণ করা হচ্ছে… Analyzing the story’s mood.';
     timer = setInterval(() => { elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`; }, 1000);
+    if (!job.plan) {
+      const analysis = await requestGeneration(input, form.dataset.planUrl);
+      job.plan = analysis.plan;
+    }
+    const chunks = job.plan;
+    if (!chunks?.length) throw new Error('The story analysis did not return any passages.');
+    const emotionNames = {narration: 'গল্প বলা', happy: 'আনন্দ', sad: 'দুঃখ', angry: 'রাগ', fear: 'ভয়', surprise: 'বিস্ময়'};
     const progress = index => {
       const value = Math.round(index / chunks.length * 100);
       bar.style.width = `${value}%`; percent.textContent = `${value}%`;
-      message.textContent = `Generating Bangla section ${index + 1} of ${chunks.length}… Keep this tab open.`;
+      message.textContent = `Generating Bangla section ${index + 1} of ${chunks.length} · ${emotionNames[chunks[index].emotion] || chunks[index].emotion}… Keep this tab open.`;
       elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`;
       steps.forEach((step, i) => step.classList.toggle('active', i < 2));
     };
@@ -191,16 +197,17 @@
       progress(index);
       const section = new FormData();
       for (const [key, value] of input) section.append(key, value);
-      section.set('segment_text', chunks[index]);
+      section.set('segment_text', chunks[index].text);
+      section.set('segment_emotion', chunks[index].emotion);
       let data;
       try { data = await requestGeneration(section); }
       catch (error) {
-        if (job.completed) error.message += ` ${job.completed} of ${chunks.length} sections are saved in this tab. Click Generate again to resume; keep the script, voice and emotion unchanged.`;
+        if (job.completed) error.message += ` ${job.completed} of ${chunks.length} sections are saved in this tab. Click Generate again to resume; keep the script and voice unchanged.`;
         throw error;
       }
       if (!data.clip) throw new Error('The speech section did not include audio. Please reload and try again.');
       const part = readPcm(await data.clip.blob.arrayBuffer());
-      if (index) pcm.push(new Uint8Array(9600)); // 200 ms pause between sections.
+      if (index) pcm.push(new Uint8Array(48 * chunks[index].pause_ms));
       pcm.push(part);
       if (!result) result = data;
       job.result = result; job.completed = index + 1;
@@ -210,6 +217,10 @@
     const template = document.createElement('template'); template.innerHTML = result.card_html;
     const total = Math.round(merged.seconds), minutes = Math.floor(total / 60), seconds = total % 60;
     template.content.querySelector('.duration-badge').textContent = minutes ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
+    const moodSequence = chunks.map(section => section.emotion).filter((mood, i, moods) => !i || mood !== moods[i - 1]);
+    const summary = document.createElement('p'); summary.className = 'pane-help';
+    summary.textContent = 'স্বয়ংক্রিয় আবেগ: ' + moodSequence.slice(0, 8).map(mood => emotionNames[mood] || mood).join(' → ') + (moodSequence.length > 8 ? ' …' : '');
+    template.content.querySelector('.script-preview').after(summary);
     result.card_html = template.innerHTML;
     result.clip.card_html = result.card_html;
     expressiveJob = null;
@@ -258,19 +269,9 @@
     const error = form.querySelector(`[data-error-for="${CSS.escape(field.name)}"]`);
     if (error) error.textContent = '';
   }));
-  const emotionalSamples = {
-    happy: 'আজ আমার স্বপ্নটা সত্যি হলো! এত দিনের পরিশ্রমের পর এই সুখবরটা সবার আগে তোমাকেই জানাতে চেয়েছিলাম।',
-    sad: 'আজও তোমার কথা খুব মনে পড়ে। জানালার পাশে বসে থাকি, মনে হয় তুমি আবার ফিরে এসে ডাকবে আমাকে।',
-    angry: 'তুমি কথা দিয়েছিলে সময়মতো আসবে! এতক্ষণ অপেক্ষা করলাম, অথচ একটা খবর দেওয়ারও প্রয়োজন মনে করলে না?',
-    fear: 'বাইরে হঠাৎ কিসের শব্দ হলো? আমার খুব ভয় করছে। তুমি একটু কাছে এসে বসবে?',
-    surprise: 'সত্যি? তুমি ফিরে এসেছো! আমি তো ভাবতেই পারিনি আজ তোমার সঙ্গে দেখা হবে!',
-    conversation: 'কেমন আছো? অনেক দিন তোমার সঙ্গে গল্প করা হয় না। চলো, এক কাপ চা নিয়ে বসি।',
-    news: 'আজকের প্রধান সংবাদে আপনাদের স্বাগতম। দেশের বিভিন্ন অঞ্চলে আগামীকাল বৃষ্টির সম্ভাবনা রয়েছে।',
-    neutral: 'বাংলা ভাষায় পরিষ্কার উচ্চারণ ও স্বাভাবিক গতিতে এই লেখাটি পড়া হচ্ছে।',
-    narration: 'সেদিন বিকেলে নদীর ধারে একা দাঁড়িয়ে ছিল মেয়েটি। হঠাৎ দূর থেকে ভেসে এলো একটি পরিচিত কণ্ঠ। সে চমকে ফিরে তাকাল।'
-  };
   document.querySelector('#sampleBtn').addEventListener('click', () => {
-    text.value = language.value === 'bn_BD' ? emotionalSamples[emotion.disabled ? 'narration' : emotion.value]
+    text.value = language.value === 'bn_BD'
+      ? 'আজ আমার মেয়ে পরীক্ষায় প্রথম হয়েছে। খুশিতে সবার মুখে হাসি।\n\nআমি খুব ভয় পাচ্ছি। মনে হচ্ছে কেউ আমাকে মেরে ফেলবে।\n\nপরের দিনই বাবা মারা গেলেন। বুক ফেটে কান্না এলো।'
       : samples[Math.floor(Math.random() * samples.length)];
     update(); text.focus();
   });

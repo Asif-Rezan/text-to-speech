@@ -3,7 +3,7 @@
   "functions": {
     "config/wsgi.py": {
       "maxDuration": 300,
-      "excludeFiles": "{venv/**,.venv/**,db.sqlite3,media/**,models/piper/*.onnx,server*.log}"
+      "excludeFiles": "{venv/**,.venv/**,db.sqlite3,media/**,models/piper/*.onnx,models/story-emotions/**,server*.log}"
     }
   }
 }

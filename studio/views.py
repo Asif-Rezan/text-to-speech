@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from .parler import VOICES as PARLER_VOICES
+from .parler import VOICES as PARLER_VOICES, EMOTION_STYLES
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .forms import SpeechForm
@@ -26,6 +26,9 @@ def studio(request):
         if segment is not None and (form.cleaned_data['voice'] not in PARLER_VOICES or not segment.strip() or len(segment) > 250):
             return JsonResponse({'ok': False, 'message': 'Invalid speech section.', 'errors': {
                 'text': [{'message': 'Please reload the page and try again.'}]}}, status=422)
+        delivery = request.POST.get('segment_emotion', form.cleaned_data['emotion'])
+        if segment is not None and (delivery not in EMOTION_STYLES or delivery == 'auto'):
+            return JsonResponse({'ok': False, 'message': 'Please reload the page to analyze your story first.'}, status=422)
         # Long scripts run as independent browser-coordinated requests. Sections
         # never become separate history entries; the browser saves the merged WAV.
         if segment is not None:
@@ -34,7 +37,7 @@ def studio(request):
             item = SpeechGeneration.objects.create(**form.cleaned_data)
         output = Path(settings.MEDIA_ROOT) / 'audio' / item.created_at.strftime('%Y/%m') / f'{item.public_id}.{item.format}'
         try:
-            item.duration_seconds = synthesize(segment if segment is not None else item.text, item.voice, item.language, item.speed, output, item.format, emotion=item.emotion)
+            item.duration_seconds = synthesize(segment if segment is not None else item.text, item.voice, item.language, item.speed, output, item.format, emotion=delivery)
             item.audio_file.name = str(output.relative_to(settings.MEDIA_ROOT)).replace('\\', '/')
             item.status = 'completed'
             if segment is None:
@@ -53,6 +56,7 @@ def studio(request):
             payload = {
                 'ok': item.status == 'completed',
                 'status': item.status,
+                'emotion': delivery,
                 'message': 'Your audio is ready.' if item.status == 'completed' else item.error_message,
                 'card_html': render_to_string('studio/_audio_card.html', {'item': item}, request=request),
             }
@@ -129,3 +133,20 @@ def sitemap(request):
   <url><loc>{settings.PUBLIC_SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
 </urlset>'''
     return HttpResponse(content, content_type='application/xml')
+
+
+@require_POST
+def story_plan(request):
+    form = SpeechForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({'ok': False, 'message': 'Please correct the highlighted fields.',
+                             'errors': form.errors.get_json_data()}, status=422)
+    if form.cleaned_data['voice'] not in PARLER_VOICES:
+        return JsonResponse({'ok': False, 'message': 'Select Aditi or Arjun for story narration.'}, status=422)
+    from .story import plan_story
+    from .services import TTSUnavailable
+    try:
+        plan = plan_story(form.cleaned_data['text'])
+    except TTSUnavailable as exc:
+        return JsonResponse({'ok': False, 'message': str(exc)}, status=503)
+    return JsonResponse({'ok': True, 'plan': plan})

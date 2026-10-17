@@ -6,3 +6,8 @@ whitenoise>=6.9,<7
 edge-tts>=7.3.1,<8
 miniaudio>=1.71,<2
 # Optional local IndicVoice runtime: install requirements-indicvoice.txt separately.
+
+# CPU-only semantic story emotion analysis; no PyTorch/GPU runtime.
+onnxruntime>=1.20,<2
+tokenizers>=0.22,<0.23
+numpy>=1.26,<3

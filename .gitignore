@@ -10,3 +10,5 @@ models/piper/*.onnx
 models/piper/*.onnx.part
 
 models/indicvoice/
+
+models/story-emotions/

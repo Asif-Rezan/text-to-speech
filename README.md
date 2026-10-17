@@ -117,32 +117,32 @@ no hosted inference provider and no listening-study evaluation. The checked
 BosonLab Bangla Chatterbox Space was failing to start. None of these findings
 establish a universal best model or ElevenLabs-equivalent quality.
 
-### Emotional Bangla delivery
+### Automatic emotional Bangla stories
 
-Aditi and Arjun now expose Indic Parler-TTS's documented Bengali emotion
-conditioning: storytelling, conversation, happy, sad, angry, fear, surprise,
-news, and neutral. The chosen direction is passed separately from the script
-on every section, so emotion labels are not inserted into spoken text. Pace
-remains a model prompt rather than an exact speed multiplier. Emotion adherence
-is probabilistic; compare samples with your own script before using the result.
-Emotion is shown on the audio card. A retry after changing emotion starts a new
-job so sections from different delivery settings cannot be mixed.
+Paste a story and generate. There is no emotion selector. A CPU-only semantic
+analysis step runs on Vercel before speech generation, using the Apache-2.0
+[Horizon multilingual emotion classifier](https://huggingface.co/Horizon-Labs/multilingual-emotions-small),
+which includes Bengali in its training languages. It uses a quantized ONNX model
+and tokenizer, downloaded once per instance, pinned to revision
+`1bc9627f189e5aa08b00cf525c3c86052067b81e` and verified by SHA-256. No story
+text is sent to the classifier's publisher. No PyTorch or GPU is used for analysis.
 
-The model remains `ai4bharat/indic-parler-tts`; this update enables its emotion
-controls rather than claiming a new model or an independently established best
-model. Current alternatives checked on 17 October 2026:
+The planner scores sentences and nearby paragraph context. A clear local emotion
+can mark a turn inside a paragraph; short ambiguous continuations use the
+paragraph mood. Low-confidence passages use restrained narration. Adjacent
+passages with the same mood are grouped up to 250 characters. Emotion changes
+and paragraph breaks receive slightly longer pauses. Every section is sent to
+Indic Parler-TTS with its own detected delivery; all sections become one WAV.
+20,000-character scripts and same-tab resume remain supported.
 
-- Orpheus Bangla Emotional: its current model card limits production/hosted use
-  without written permission, and reports that emotion tags can be spoken aloud.
-- Rumik OSS 1: Bengali emotional delivery is documented, but the official free
-  Space was paused (503) and weights are CC BY-NC 4.0.
-- Indic-Speak: its model card describes emotion control as inconsistent preview
-  quality and puts conditions on providing hosted inference.
-- Indic-Mio: has Indian-language emotion tags and Apache-2.0 weights, but no
-  available hosted inference provider was listed. It needs an inference host.
+Emotion inference is imperfect, especially for irony, figurative writing, and
+unusual story contexts. This classifier was trained mainly on translated short
+comments rather than fiction. Uncertain scores are not represented as certain
+emotions. There is no keyword-list fallback if analysis is unavailable: the UI
+reports an error and allows retrying. The published emotion-classification
+benchmarks do not establish the quality of this narration pipeline.
 
-References: [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts),
-[Orpheus Bangla](https://huggingface.co/ehzawad/orpheus-bangla-emotional-tts),
-[Rumik](https://huggingface.co/rumik-ai/rumik-oss-1),
-[Indic-Speak](https://huggingface.co/bodhan-ai/indic-speak),
-[Indic-Mio](https://huggingface.co/SPRINGLab/Indic-Mio).
+Local checks: approximately 680 MB peak process memory during analysis; a large
+story planned in a few seconds after model loading. Vercel cold starts also need
+to download about 303 MB of cached model/tokenizer assets. Live deployment tests
+are needed to establish actual runtime behavior on Vercel.
