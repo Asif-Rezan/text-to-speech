@@ -123,7 +123,7 @@ Paste a story and generate. There is no emotion selector. A CPU-only semantic
 analysis step runs on Vercel before speech generation, using the Apache-2.0
 [Horizon multilingual emotion classifier](https://huggingface.co/Horizon-Labs/multilingual-emotions-small),
 which includes Bengali in its training languages. It uses a quantized ONNX model
-and tokenizer, downloaded once per instance, pinned to revision
+and tokenizer, downloaded into memory once per instance, pinned to revision
 `1bc9627f189e5aa08b00cf525c3c86052067b81e` and verified by SHA-256. No story
 text is sent to the classifier's publisher. No PyTorch or GPU is used for analysis.
 
@@ -142,7 +142,8 @@ emotions. There is no keyword-list fallback if analysis is unavailable: the UI
 reports an error and allows retrying. The published emotion-classification
 benchmarks do not establish the quality of this narration pipeline.
 
-Local checks: approximately 680 MB peak process memory during analysis; a large
+Local checks: approximately 963 MB peak process memory during in-memory analysis; a large
 story planned in a few seconds after model loading. Vercel cold starts also need
-to download about 303 MB of cached model/tokenizer assets. Live deployment tests
+to download about 303 MB of model/tokenizer assets. These are cached in memory
+without using Vercel scratch disk space. Live deployment tests
 are needed to establish actual runtime behavior on Vercel.

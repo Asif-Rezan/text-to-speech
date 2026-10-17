@@ -1,13 +1,10 @@
 """Semantic story-emotion planning with a pinned, CPU-only ONNX classifier."""
 import hashlib
+import io
 import logging
 import re
-import tempfile
 import threading
-from pathlib import Path
 from urllib.request import Request, urlopen
-
-from django.conf import settings
 
 MODEL = 'Horizon-Labs/multilingual-emotions-small'
 REVISION = '1bc9627f189e5aa08b00cf525c3c86052067b81e'
@@ -29,6 +26,23 @@ _lock = threading.Lock()
 _classifier = None
 
 
+def _read_asset(name, expected, max_bytes):
+    # Vercel scratch storage may be smaller than this model. Verified assets go
+    # straight into memory; no temporary weight files or duplicate disk caches.
+    digest = hashlib.sha256()
+    buffer = io.BytesIO()
+    url = f'https://huggingface.co/{MODEL}/resolve/{REVISION}/{name}'
+    with urlopen(Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'}), timeout=60) as source:
+        while chunk := source.read(1024 * 1024):
+            if buffer.tell() + len(chunk) > max_bytes:
+                raise ValueError('Story model asset is larger than expected.')
+            buffer.write(chunk)
+            digest.update(chunk)
+    if digest.hexdigest() != expected:
+        raise ValueError('Story model checksum mismatch.')
+    return buffer.getvalue()
+
+
 def _load_classifier():
     global _classifier
     if _classifier is not None:
@@ -39,37 +53,16 @@ def _load_classifier():
         import onnxruntime as ort
         from tokenizers import Tokenizer
 
-        root = settings.RUNTIME_DIR / 'models' / 'story-emotions' / REVISION
-        root.mkdir(parents=True, exist_ok=True)
-        for name, expected in ASSETS.items():
-            target = root / Path(name).name
-            if target.is_file():
-                continue
-            partial = None
-            try:
-                with tempfile.NamedTemporaryFile(dir=root, delete=False) as destination:
-                    partial = Path(destination.name)
-                    digest = hashlib.sha256()
-                    url = f'https://huggingface.co/{MODEL}/resolve/{REVISION}/{name}'
-                    with urlopen(Request(url, headers={'User-Agent': 'NeuralVoiceStudio/1.0'}), timeout=60) as source:
-                        while chunk := source.read(1024 * 1024):
-                            destination.write(chunk)
-                            digest.update(chunk)
-                    if digest.hexdigest() != expected:
-                        raise ValueError('Story model checksum mismatch.')
-                partial.replace(target)
-            finally:
-                if partial:
-                    partial.unlink(missing_ok=True)
-        tokenizer = Tokenizer.from_file(str(root / 'tokenizer.json'))
+        tokenizer = Tokenizer.from_str(_read_asset('tokenizer.json', ASSETS['tokenizer.json'], 34363286).decode('utf-8'))
         tokenizer.enable_truncation(max_length=256)
         tokenizer.enable_padding(pad_id=0, pad_token='[PAD]')
         options = ort.SessionOptions()
         options.intra_op_num_threads = 1
         options.inter_op_num_threads = 1
         options.enable_mem_pattern = False
-        session = ort.InferenceSession(str(root / 'model_quantized.onnx'), sess_options=options,
-                                       providers=['CPUExecutionProvider'])
+        session = ort.InferenceSession(
+            _read_asset('onnx/model_quantized.onnx', ASSETS['onnx/model_quantized.onnx'], 268449278),
+            sess_options=options, providers=['CPUExecutionProvider'])
         _classifier = (tokenizer, session)
         return _classifier
 

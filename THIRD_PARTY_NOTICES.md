@@ -51,6 +51,6 @@ quotas are controlled by its operator.
 https://huggingface.co/Horizon-Labs/multilingual-emotions-small
 Apache-2.0. A multilingual 28-label GoEmotions classifier, including Bengali
 training data, based on jhu-clsp/mmBERT-small. Quantized ONNX weights and tokenizer
-are fetched at runtime from pinned revision 1bc9627f189e5aa08b00cf525c3c86052067b81e.
+are fetched into memory at runtime from pinned revision 1bc9627f189e5aa08b00cf525c3c86052067b81e.
 Runtime assets are not committed to or packaged with this application.
 License: https://www.apache.org/licenses/LICENSE-2.0

@@ -379,3 +379,18 @@ class AutomaticStoryTests(TestCase):
         })
         self.assertEqual(response.status_code, 503)
         self.assertFalse(response.json()['ok'])
+
+    @patch('studio.story.urlopen')
+    def test_analysis_assets_are_verified_in_memory(self, urlopen):
+        import io
+        import hashlib
+        from studio.story import _read_asset
+        data = b'verified model asset'
+        urlopen.return_value = io.BytesIO(data)
+        self.assertEqual(_read_asset('test', hashlib.sha256(data).hexdigest(), len(data)), data)
+        urlopen.return_value = io.BytesIO(b'bad')
+        with self.assertRaisesRegex(ValueError, 'checksum'):
+            _read_asset('test', hashlib.sha256(data).hexdigest(), len(data))
+        urlopen.return_value = io.BytesIO(data)
+        with self.assertRaisesRegex(ValueError, 'larger'):
+            _read_asset('test', hashlib.sha256(data).hexdigest(), len(data) - 1)
