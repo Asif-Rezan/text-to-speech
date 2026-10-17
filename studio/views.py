@@ -34,7 +34,7 @@ def studio(request):
             item = SpeechGeneration.objects.create(**form.cleaned_data)
         output = Path(settings.MEDIA_ROOT) / 'audio' / item.created_at.strftime('%Y/%m') / f'{item.public_id}.{item.format}'
         try:
-            item.duration_seconds = synthesize(segment if segment is not None else item.text, item.voice, item.language, item.speed, output, item.format)
+            item.duration_seconds = synthesize(segment if segment is not None else item.text, item.voice, item.language, item.speed, output, item.format, emotion=item.emotion)
             item.audio_file.name = str(output.relative_to(settings.MEDIA_ROOT)).replace('\\', '/')
             item.status = 'completed'
             if segment is None:

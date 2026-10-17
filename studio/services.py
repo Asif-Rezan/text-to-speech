@@ -208,10 +208,10 @@ def synthesize_online(text, voice, speed, output_path):
         raise TTSUnavailable('The online Bangla voice service is unavailable. Please try again shortly.') from exc
 
 
-def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
+def synthesize(text, voice, language, speed, output_path, audio_format='wav', emotion='narration'):
     if voice in PARLER_VOICES:
         from .parler import synthesize_parler
-        return synthesize_parler(text, voice, speed, output_path)
+        return synthesize_parler(text, voice, speed, output_path, emotion=emotion)
     if voice == INDICVOICE_ID:
         from .indicvoice import synthesize_indicvoice
         with _synthesis_lock:

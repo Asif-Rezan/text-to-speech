@@ -1,5 +1,5 @@
 <article class="audio-card" data-generation-id="{{ item.public_id }}">
-  <div class="card-top"><span class="file-icon">{% if item.status == 'completed' %}♫{% elif item.status == 'failed' %}!{% else %}…{% endif %}</span><div><h3>{{ item.display_title }}</h3><p>{{ item.created_at|timesince }} ago · {{ item.voice }} · {{ item.format|upper }}</p></div></div>
+  <div class="card-top"><span class="file-icon">{% if item.status == 'completed' %}♫{% elif item.status == 'failed' %}!{% else %}…{% endif %}</span><div><h3>{{ item.display_title }}</h3><p>{{ item.created_at|timesince }} ago · {{ item.voice }} · {{ item.format|upper }}{% if "-parler" in item.voice %} · {{ item.get_emotion_display }}{% endif %}</p></div></div>
   <p class="script-preview">{{ item.text|truncatechars:110 }}</p>
   {% if item.status == 'completed' %}<audio controls preload="metadata" src="{% url 'studio:stream' item.public_id %}"></audio>
   <div class="card-actions"><a class="download-btn" href="{% url 'studio:download' item.public_id %}" aria-label="Download {{ item.display_title }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg><span>Download WAV</span></a><span class="duration-badge">{% if item.duration_seconds %}{{ item.duration_label }}{% endif %}</span></div>

@@ -92,6 +92,11 @@
               <label for="id_voice">কণ্ঠ / Voice</label>{{ form.voice }}
               <div class="field-error client-field-error" data-error-for="language">{% for error in form.language.errors %}{{ error }}{% endfor %}</div>
               <div class="field-error client-field-error" data-error-for="voice">{% for error in form.voice.errors %}{{ error }}{% endfor %}</div>
+              <div id="emotionControls">
+                <label for="id_emotion">আবেগ / Emotion</label>{{ form.emotion }}
+                <div class="field-error client-field-error" data-error-for="emotion">{% for error in form.emotion.errors %}{{ error }}{% endfor %}</div>
+                <p class="pane-help">কণ্ঠের আবেগ বেছে নিন। Emotion guides the delivery; results vary with the script.</p>
+              </div>
               <p class="pane-help" id="voiceLimitNote">Expressive Bangla: up to 20,000 characters, combined into one WAV.</p>
               <div class="d-flex justify-content-between"><label for="id_speed">Speaking pace</label><output id="speedValue">1.00×</output></div>
               {{ form.speed }}

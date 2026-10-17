@@ -6,6 +6,7 @@
   const speedValue = document.querySelector('#speedValue');
   const language = document.querySelector('#id_language');
   const voice = document.querySelector('#id_voice');
+  const emotion = document.querySelector('#id_emotion');
   const form = document.querySelector('#speechForm');
   const button = document.querySelector('#generateBtn');
   const overlay = document.querySelector('#generationOverlay');
@@ -38,6 +39,8 @@
 
   function updateVoicePrivacy() {
     const expressive = voice.value.endsWith('-parler');
+    document.querySelector('#emotionControls').hidden = !expressive;
+    emotion.disabled = !expressive;
     text.maxLength = voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
     document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
     document.querySelector('#voiceLimitNote').textContent = expressive
@@ -172,7 +175,7 @@
     const chunks = splitScript(String(input.get('text')));
     if (!chunks.length) throw new Error('Enter text to synthesize.');
     clearInterval(timer);
-    const key = JSON.stringify(['text', 'voice', 'language', 'speed', 'title', 'format'].map(name => input.get(name)));
+    const key = JSON.stringify(['text', 'voice', 'language', 'speed', 'title', 'format', 'emotion'].map(name => input.get(name)));
     if (!expressiveJob || expressiveJob.key !== key) expressiveJob = {key, pcm: [], completed: 0, result: null};
     const job = expressiveJob, pcm = job.pcm, start = Date.now();
     let result = job.result;
@@ -192,7 +195,7 @@
       let data;
       try { data = await requestGeneration(section); }
       catch (error) {
-        if (job.completed) error.message += ` ${job.completed} of ${chunks.length} sections are saved in this tab. Click Generate again to resume; keep the script and voice unchanged.`;
+        if (job.completed) error.message += ` ${job.completed} of ${chunks.length} sections are saved in this tab. Click Generate again to resume; keep the script, voice and emotion unchanged.`;
         throw error;
       }
       if (!data.clip) throw new Error('The speech section did not include audio. Please reload and try again.');
@@ -255,7 +258,22 @@
     const error = form.querySelector(`[data-error-for="${CSS.escape(field.name)}"]`);
     if (error) error.textContent = '';
   }));
-  document.querySelector('#sampleBtn').addEventListener('click', () => { text.value = language.value === 'bn_BD' ? 'আজকের আলোচনায় আপনাদের স্বাগতম। পরিষ্কার উচ্চারণ ও স্বাভাবিক গতিতে কথা বললে প্রতিটি বিষয় সহজে বোঝা যায়। চলুন, একটি নতুন গল্প দিয়ে শুরু করি।' : samples[Math.floor(Math.random() * samples.length)]; update(); text.focus(); });
+  const emotionalSamples = {
+    happy: 'আজ আমার স্বপ্নটা সত্যি হলো! এত দিনের পরিশ্রমের পর এই সুখবরটা সবার আগে তোমাকেই জানাতে চেয়েছিলাম।',
+    sad: 'আজও তোমার কথা খুব মনে পড়ে। জানালার পাশে বসে থাকি, মনে হয় তুমি আবার ফিরে এসে ডাকবে আমাকে।',
+    angry: 'তুমি কথা দিয়েছিলে সময়মতো আসবে! এতক্ষণ অপেক্ষা করলাম, অথচ একটা খবর দেওয়ারও প্রয়োজন মনে করলে না?',
+    fear: 'বাইরে হঠাৎ কিসের শব্দ হলো? আমার খুব ভয় করছে। তুমি একটু কাছে এসে বসবে?',
+    surprise: 'সত্যি? তুমি ফিরে এসেছো! আমি তো ভাবতেই পারিনি আজ তোমার সঙ্গে দেখা হবে!',
+    conversation: 'কেমন আছো? অনেক দিন তোমার সঙ্গে গল্প করা হয় না। চলো, এক কাপ চা নিয়ে বসি।',
+    news: 'আজকের প্রধান সংবাদে আপনাদের স্বাগতম। দেশের বিভিন্ন অঞ্চলে আগামীকাল বৃষ্টির সম্ভাবনা রয়েছে।',
+    neutral: 'বাংলা ভাষায় পরিষ্কার উচ্চারণ ও স্বাভাবিক গতিতে এই লেখাটি পড়া হচ্ছে।',
+    narration: 'সেদিন বিকেলে নদীর ধারে একা দাঁড়িয়ে ছিল মেয়েটি। হঠাৎ দূর থেকে ভেসে এলো একটি পরিচিত কণ্ঠ। সে চমকে ফিরে তাকাল।'
+  };
+  document.querySelector('#sampleBtn').addEventListener('click', () => {
+    text.value = language.value === 'bn_BD' ? emotionalSamples[emotion.disabled ? 'narration' : emotion.value]
+      : samples[Math.floor(Math.random() * samples.length)];
+    update(); text.focus();
+  });
   document.querySelector('#clearBtn').addEventListener('click', () => { text.value = ''; update(); text.focus(); });
 
   form.addEventListener('submit', async event => {

@@ -19,7 +19,7 @@ class StudioTests(TestCase):
     @override_settings(ON_VERCEL=True)
     def test_vercel_delivers_audio_in_generation_response(self):
         audio = b'RIFF' + bytes(range(256)) * 20000
-        def generate(text, voice, language, speed, output, fmt):
+        def generate(text, voice, language, speed, output, fmt, emotion='narration'):
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_bytes(audio)
             return 43.0
@@ -234,7 +234,7 @@ class ExpressiveBanglaTests(TestCase):
         script = 'আজকের গল্পে আপনাদের স্বাগতম। ' * 60
         segment = 'আজকের গল্পে আপনাদের স্বাগতম।'
         captured = []
-        def generate(text, voice, language, speed, output, fmt):
+        def generate(text, voice, language, speed, output, fmt, emotion='narration'):
             captured.append((text, output))
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_bytes(b'RIFF-test-audio')
@@ -261,3 +261,50 @@ class ExpressiveBanglaTests(TestCase):
             }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
             self.assertEqual(response.status_code, 422)
         synthesize.assert_not_called()
+
+    def test_emotions_validate_only_for_expressive_voices(self):
+        from .parler import EMOTION_STYLES
+        values = {'text': 'তোমাকে দেখে ভালো লাগছে।', 'language': 'bn_BD',
+                  'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav'}
+        for emotion in EMOTION_STYLES:
+            form = SpeechForm({**values, 'emotion': emotion})
+            self.assertTrue(form.is_valid(), form.errors)
+            self.assertEqual(form.cleaned_data['emotion'], emotion)
+        self.assertEqual(SpeechForm(values).is_valid(), True)
+        self.assertIn('emotion', SpeechForm({**values, 'emotion': 'unsupported'}).errors)
+        self.assertIn('emotion', SpeechForm({**values, 'voice': 'bn_BD-nabanita-neural', 'emotion': 'sad'}).errors)
+
+    @patch('studio.parler.urlopen')
+    def test_emotion_is_sent_as_direction_without_altering_script(self, urlopen):
+        import io
+        import time
+        from studio.parler import _generate
+        text = 'এত দিন পরে তোমাকে দেখে ভালো লাগছে।'
+        for emotion, description in [('happy', 'cheerful, happy'), ('sad', 'sad, subdued')]:
+            urlopen.side_effect = [io.BytesIO(b'{"event_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'),
+                io.BytesIO(b'event: complete\ndata: [{"path":"/tmp/gradio/test/audio"}]\n\n')]
+            _generate(text, 'Aditi', 1, time.monotonic() + 10, emotion=emotion)
+            request = urlopen.call_args_list[-2].args[0]
+            payload = json.loads(request.data)
+            self.assertEqual(payload['data'][0], text)
+            self.assertIn(description, payload['data'][1])
+            self.assertIn('Aditi', payload['data'][1])
+
+    @override_settings(ON_VERCEL=True)
+    def test_emotion_reaches_segment_synthesis_and_audio_card(self):
+        def generate(text, voice, language, speed, output, fmt, emotion='narration'):
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(b'RIFF-test-audio')
+            return 2.0
+        with tempfile.TemporaryDirectory() as directory, override_settings(MEDIA_ROOT=directory):
+            with patch('studio.views.synthesize', side_effect=generate) as synthesis:
+                response = self.client.post(reverse('studio:home'), {
+                    'text': 'আজকের গল্প। ' * 100, 'segment_text': 'আজকের গল্প।',
+                    'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler',
+                    'speed': '1', 'format': 'wav', 'emotion': 'happy',
+                }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                packets = [json.loads(line) for line in b''.join(response.streaming_content).splitlines()]
+                self.assertEqual(response.status_code, 201)
+                self.assertEqual(synthesis.call_args.kwargs['emotion'], 'happy')
+                self.assertIn('Happy', packets[0]['card_html'])
+                self.assertTrue(packets[-1]['complete'])

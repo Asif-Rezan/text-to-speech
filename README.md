@@ -116,3 +116,33 @@ predictable for this app. A newer Bangladesh-specific IndicF5 fine-tune has
 no hosted inference provider and no listening-study evaluation. The checked
 BosonLab Bangla Chatterbox Space was failing to start. None of these findings
 establish a universal best model or ElevenLabs-equivalent quality.
+
+### Emotional Bangla delivery
+
+Aditi and Arjun now expose Indic Parler-TTS's documented Bengali emotion
+conditioning: storytelling, conversation, happy, sad, angry, fear, surprise,
+news, and neutral. The chosen direction is passed separately from the script
+on every section, so emotion labels are not inserted into spoken text. Pace
+remains a model prompt rather than an exact speed multiplier. Emotion adherence
+is probabilistic; compare samples with your own script before using the result.
+Emotion is shown on the audio card. A retry after changing emotion starts a new
+job so sections from different delivery settings cannot be mixed.
+
+The model remains `ai4bharat/indic-parler-tts`; this update enables its emotion
+controls rather than claiming a new model or an independently established best
+model. Current alternatives checked on 17 October 2026:
+
+- Orpheus Bangla Emotional: its current model card limits production/hosted use
+  without written permission, and reports that emotion tags can be spoken aloud.
+- Rumik OSS 1: Bengali emotional delivery is documented, but the official free
+  Space was paused (503) and weights are CC BY-NC 4.0.
+- Indic-Speak: its model card describes emotion control as inconsistent preview
+  quality and puts conditions on providing hosted inference.
+- Indic-Mio: has Indian-language emotion tags and Apache-2.0 weights, but no
+  available hosted inference provider was listed. It needs an inference host.
+
+References: [Indic Parler](https://huggingface.co/ai4bharat/indic-parler-tts),
+[Orpheus Bangla](https://huggingface.co/ehzawad/orpheus-bangla-emotional-tts),
+[Rumik](https://huggingface.co/rumik-ai/rumik-oss-1),
+[Indic-Speak](https://huggingface.co/bodhan-ai/indic-speak),
+[Indic-Mio](https://huggingface.co/SPRINGLab/Indic-Mio).

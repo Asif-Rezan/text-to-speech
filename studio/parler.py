@@ -16,16 +16,34 @@ VOICES = {'bn_BD-aditi-parler': 'Aditi', 'bn_BD-arjun-parler': 'Arjun'}
 MAX_CHARS = 20000
 MAX_SECONDS = 220
 
+EMOTION_STYLES = {
+    'narration': ('গল্প বলা / Storytelling', 'an expressive storytelling tone, with varied intonation and natural dramatic pauses'),
+    'conversation': ('কথোপকথন / Conversation', 'a friendly, conversational tone, sounding engaged and natural'),
+    'happy': ('আনন্দ / Happy', 'a cheerful, happy tone, sounding joyful and animated'),
+    'sad': ('দুঃখ / Sad', 'a sad, subdued tone, sounding sorrowful with a gentle, soft delivery'),
+    'angry': ('রাগ / Angry', 'an angry, forceful tone, sounding frustrated and emphatic'),
+    'fear': ('ভয় / Fear', 'a fearful, nervous tone, sounding tense and worried'),
+    'surprise': ('বিস্ময় / Surprise', 'a surprised, astonished tone, with lively changes in pitch'),
+    'news': ('সংবাদ / News', 'a clear, composed newsreader tone, sounding professional and confident'),
+    'neutral': ('স্বাভাবিক / Neutral', 'a clear, neutral tone, with no emotional emphasis'),
+}
+EMOTION_CHOICES = [(key, label) for key, (label, _) in EMOTION_STYLES.items()]
 
-def _generate(text, speaker, speed, deadline):
+
+def voice_description(speaker, speed, emotion='narration'):
+    if emotion not in EMOTION_STYLES:
+        raise ValueError('Unsupported Bangla emotion.')
+    pace = 'slow' if float(speed) < .9 else 'fast' if float(speed) > 1.1 else 'moderate'
+    return (
+        f'{speaker} speaks with {EMOTION_STYLES[emotion][1]}, at a {pace} speaking pace. '
+        'The voice is clear and close, and the recording is very high quality with no background noise.'
+    )
+
+
+def _generate(text, speaker, speed, deadline, emotion='narration'):
     from .services import TTSUnavailable
 
-    pace = 'slow' if float(speed) < .9 else 'fast' if float(speed) > 1.1 else 'moderate'
-    description = (
-        f'{speaker} speaks with a warm, expressive tone and a {pace} speaking pace, '
-        'with natural pauses and clear pronunciation. '
-        'The recording is very high quality, with no background noise.'
-    )
+    description = voice_description(speaker, speed, emotion)
     endpoint = f'{HOST}/gradio_api/call/generate_finetuned'
 
     def remaining():
@@ -65,7 +83,7 @@ def _generate(text, speaker, speed, deadline):
     raise TTSUnavailable('The expressive Bangla service did not return audio.')
 
 
-def synthesize_parler(text, voice, speed, output_path):
+def synthesize_parler(text, voice, speed, output_path, emotion='narration'):
     import miniaudio
     from .services import TTSUnavailable, split_text
 
@@ -80,7 +98,7 @@ def synthesize_parler(text, voice, speed, output_path):
             with wave.open(str(output), 'wb') as destination:
                 destination.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
                 for index, chunk in enumerate(split_text(text, max_chars=250)):
-                    url = _generate(chunk, VOICES[voice], speed, deadline)
+                    url = _generate(chunk, VOICES[voice], speed, deadline, emotion=emotion)
                     source = Path(directory) / f'{index}.audio'
                     if time.monotonic() >= deadline:
                         raise TimeoutError

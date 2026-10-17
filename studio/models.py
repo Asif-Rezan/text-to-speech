@@ -3,6 +3,8 @@ from pathlib import Path
 
 from django.db import models
 
+from .parler import EMOTION_CHOICES
+
 
 def audio_upload_path(instance, filename):
     return f'audio/{instance.created_at:%Y/%m}/{instance.public_id}.{Path(filename).suffix.lstrip(".")}'
@@ -15,6 +17,7 @@ class SpeechGeneration(models.Model):
     text = models.TextField()
     voice = models.CharField(max_length=40, default='en_US-ljspeech-medium')
     language = models.CharField(max_length=8, default='en_US')
+    emotion = models.CharField(max_length=20, choices=EMOTION_CHOICES, default='narration')
     speed = models.DecimalField(max_digits=3, decimal_places=2, default=1.00)
     format = models.CharField(max_length=8, default='wav')
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='processing', db_index=True)
