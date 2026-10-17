@@ -181,7 +181,12 @@ class ExpressiveBanglaTests(TestCase):
         self.assertEqual(form.fields['language'].initial, 'bn_BD')
         self.assertEqual(form.fields['voice'].initial, 'bn_BD-aditi-parler')
         values = {'text': 'ক' * 1001, 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav'}
+        self.assertTrue(SpeechForm(values).is_valid())
+        values['text'] = 'ক' * 20000
+        self.assertTrue(SpeechForm(values).is_valid())
+        values['text'] += 'ক'
         self.assertIn('text', SpeechForm(values).errors)
+        values['text'] = 'ক' * 1001
         values['voice'] = 'bn_BD-nabanita-neural'
         self.assertTrue(SpeechForm(values).is_valid())
 
@@ -223,3 +228,36 @@ class ExpressiveBanglaTests(TestCase):
             with self.assertRaises(TTSUnavailable):
                 synthesize('বাংলা কথা।', 'bn_BD-aditi-parler', 'bn_BD', 1, output)
             self.assertFalse(output.exists())
+
+    @override_settings(ON_VERCEL=True)
+    def test_long_script_section_returns_audio_without_partial_history(self):
+        script = 'আজকের গল্পে আপনাদের স্বাগতম। ' * 60
+        segment = 'আজকের গল্পে আপনাদের স্বাগতম।'
+        captured = []
+        def generate(text, voice, language, speed, output, fmt):
+            captured.append((text, output))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(b'RIFF-test-audio')
+            return 2.5
+        with tempfile.TemporaryDirectory() as directory, override_settings(MEDIA_ROOT=directory):
+            with patch('studio.views.synthesize', side_effect=generate):
+                response = self.client.post(reverse('studio:home'), {
+                    'text': script, 'segment_text': segment, 'language': 'bn_BD',
+                    'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav',
+                }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                self.assertEqual(response.status_code, 201)
+                packets = [json.loads(line) for line in b''.join(response.streaming_content).splitlines()]
+                self.assertTrue(packets[-1]['complete'])
+                self.assertEqual(captured[0][0], segment)
+                self.assertFalse(captured[0][1].exists())
+                self.assertFalse(SpeechGeneration.objects.exists())
+
+    @patch('studio.views.synthesize')
+    def test_invalid_section_is_rejected_before_synthesis(self, synthesize):
+        for segment in ['', 'ক' * 251]:
+            response = self.client.post(reverse('studio:home'), {
+                'text': 'ক' * 1500, 'segment_text': segment, 'language': 'bn_BD',
+                'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav',
+            }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(response.status_code, 422)
+        synthesize.assert_not_called()

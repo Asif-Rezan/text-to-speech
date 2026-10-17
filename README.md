@@ -97,10 +97,14 @@ can interrupt availability. It is suitable for trying expressive voices, not
 a guaranteed production inference service. Errors never silently switch models.
 For sustained production traffic, host a dedicated inference service.
 
-Requests accept up to 1,000 characters, split at natural boundaries into
-250-character segments and merged as 24 kHz mono WAV. The pace slider guides
+Requests accept up to 20,000 characters. The browser splits expressive Bangla
+at natural boundaries into 250-character sections, generates each in an
+independent Vercel request, and merges the PCM into one 24 kHz mono WAV.
+This avoids one long-running request exceeding Vercel duration limits. Keep
+the tab open until completion; shared GPU quotas can still interrupt a long job.
+Section requests do not create separate server history entries. The pace slider guides
 the model through a slow/moderate/fast prompt; it does not guarantee an exact
-playback-speed multiplier. Longer scripts can use Nabanita or Pradeep.
+playback-speed multiplier. Nabanita and Pradeep remain available for Bangladesh pronunciation.
 Audio is delivered in the original generation response and saved in the browser
 so playback/download survives Vercel instance changes.
 

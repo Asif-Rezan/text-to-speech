@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 HOST = 'https://ai4bharat-indic-parler-tts.hf.space'
 VOICES = {'bn_BD-aditi-parler': 'Aditi', 'bn_BD-arjun-parler': 'Arjun'}
-MAX_CHARS = 1000
+MAX_CHARS = 20000
 MAX_SECONDS = 220
 
 
@@ -72,7 +72,7 @@ def synthesize_parler(text, voice, speed, output_path):
     output = Path(output_path).with_suffix('.wav')
     output.parent.mkdir(parents=True, exist_ok=True)
     if voice not in VOICES or not text.strip() or len(text) > MAX_CHARS:
-        raise TTSUnavailable('Expressive Bangla supports 1–1,000 characters per generation.')
+        raise TTSUnavailable('Expressive Bangla supports 1–20,000 characters per generation.')
     deadline = time.monotonic() + MAX_SECONDS
     frames = 0
     try:

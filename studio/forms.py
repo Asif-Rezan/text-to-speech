@@ -1,7 +1,6 @@
 from django import forms
 from django.conf import settings
 
-from .parler import VOICES as PARLER_VOICES, MAX_CHARS
 
 from .services import INDICVOICE_ID, LANGUAGES, VOICES
 
@@ -25,8 +24,6 @@ class SpeechForm(forms.Form):
         language = data.get('language')
         if voice and language and not voice.startswith(f'{language}-'):
             self.add_error('voice', 'Select a voice that matches the chosen language/accent.')
-        if voice in PARLER_VOICES and len(data.get('text', '')) > MAX_CHARS:
-            self.add_error('text', 'Expressive Bangla supports up to 1,000 characters. Select Nabanita or Pradeep for longer scripts.')
         if voice == INDICVOICE_ID and len(data.get('text', '')) > 1000:
             self.add_error('text', 'IndicVoice experimental supports up to 1,000 characters per generation. Other voices support up to 20,000.')
         return data

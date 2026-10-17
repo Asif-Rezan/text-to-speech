@@ -7,6 +7,9 @@ from django.contrib import messages
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils import timezone
+
+from .parler import VOICES as PARLER_VOICES
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .forms import SpeechForm
@@ -19,19 +22,30 @@ def studio(request):
     form = SpeechForm(request.POST or None)
     wants_json = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     if request.method == 'POST' and form.is_valid():
-        item = SpeechGeneration.objects.create(**form.cleaned_data)
+        segment = request.POST.get('segment_text') if wants_json else None
+        if segment is not None and (form.cleaned_data['voice'] not in PARLER_VOICES or not segment.strip() or len(segment) > 250):
+            return JsonResponse({'ok': False, 'message': 'Invalid speech section.', 'errors': {
+                'text': [{'message': 'Please reload the page and try again.'}]}}, status=422)
+        # Long scripts run as independent browser-coordinated requests. Sections
+        # never become separate history entries; the browser saves the merged WAV.
+        if segment is not None:
+            item = SpeechGeneration(**form.cleaned_data, created_at=timezone.now())
+        else:
+            item = SpeechGeneration.objects.create(**form.cleaned_data)
         output = Path(settings.MEDIA_ROOT) / 'audio' / item.created_at.strftime('%Y/%m') / f'{item.public_id}.{item.format}'
         try:
-            item.duration_seconds = synthesize(item.text, item.voice, item.language, item.speed, output, item.format)
+            item.duration_seconds = synthesize(segment if segment is not None else item.text, item.voice, item.language, item.speed, output, item.format)
             item.audio_file.name = str(output.relative_to(settings.MEDIA_ROOT)).replace('\\', '/')
             item.status = 'completed'
-            item.save(update_fields=['duration_seconds', 'audio_file', 'status'])
+            if segment is None:
+                item.save(update_fields=['duration_seconds', 'audio_file', 'status'])
             if not wants_json:
                 messages.success(request, 'Your audio is ready to play and download.')
         except Exception as exc:
             item.status = 'failed'
             item.error_message = str(exc)[:500]
-            item.save(update_fields=['status', 'error_message'])
+            if segment is None:
+                item.save(update_fields=['status', 'error_message'])
             if not wants_json:
                 messages.error(request, item.error_message)
         if wants_json:
@@ -42,15 +56,19 @@ def studio(request):
                 'message': 'Your audio is ready.' if item.status == 'completed' else item.error_message,
                 'card_html': render_to_string('studio/_audio_card.html', {'item': item}, request=request),
             }
-            if settings.ON_VERCEL and item.status == 'completed':
+            if (settings.ON_VERCEL or segment is not None) and item.status == 'completed':
                 payload.update(id=str(item.public_id), filename=f'{item.display_title[:50]}.wav')
                 def chunks():
-                    yield json.dumps(payload) + '\n'
-                    # Deliver audio in the generation request: another instance cannot read /tmp.
-                    with output.open('rb') as source:
-                        while chunk := source.read(48 * 1024):
-                            yield json.dumps({'audio': base64.b64encode(chunk).decode('ascii')}) + '\n'
-                    yield '{"complete":true}\n'
+                    try:
+                        yield json.dumps(payload) + '\n'
+                        # Deliver audio in this request: another instance cannot read /tmp.
+                        with output.open('rb') as source:
+                            while chunk := source.read(48 * 1024):
+                                yield json.dumps({'audio': base64.b64encode(chunk).decode('ascii')}) + '\n'
+                        yield '{"complete":true}\n'
+                    finally:
+                        if segment is not None:
+                            output.unlink(missing_ok=True)
                 response = StreamingHttpResponse(chunks(), status=201, content_type='application/x-ndjson')
                 response['Cache-Control'] = 'no-store'
                 return response

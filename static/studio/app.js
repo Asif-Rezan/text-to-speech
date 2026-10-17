@@ -37,11 +37,11 @@
 
   function updateVoicePrivacy() {
     const expressive = voice.value.endsWith('-parler');
-    text.maxLength = expressive || voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
+    text.maxLength = voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
     document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
     document.querySelector('#voiceLimitNote').textContent = expressive
-      ? 'ভারতীয় বাংলা উচ্চারণ · একবারে সর্বোচ্চ ১,০০০ অক্ষর। Speaking pace guides the model; exact speed may vary. Free GPU queues can take a little longer.'
-      : 'দীর্ঘ লেখার জন্য Nabanita বা Pradeep বেছে নিন — সর্বোচ্চ ২০,০০০ অক্ষর।';
+      ? 'ভারতীয় বাংলা উচ্চারণ · সর্বোচ্চ ২০,০০০ অক্ষর। Long scripts are generated in sections and combined into one WAV. Keep this tab open.'
+      : 'সর্বোচ্চ ২০,০০০ অক্ষর।';
     const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
     document.querySelector('#voicePrivacyNote').textContent = expressive
       ? '◆ Expressive Bangla sends your script to AI4Bharat on Hugging Face. Free shared GPU; availability and quotas may vary.'
@@ -150,6 +150,57 @@
       blob: new Blob(parts, {type: 'audio/wav'}), created: Date.now()};
     return data;
   }
+
+  async function requestGeneration(input) {
+    const response = await fetch(form.action || window.location.href, {
+      method: 'POST', body: input,
+      headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+    });
+    const data = await receiveGeneration(response);
+    if (response.status === 422) {
+      const validation = showErrors(data.errors);
+      throw Object.assign(new Error(validation.firstMessage || data.message), {validation});
+    }
+    if (!response.ok || !data.ok) throw new Error(data.message || 'Audio generation failed.');
+    return data;
+  }
+
+  const {splitScript, readPcm, mergePcm} = window.NeuralVoiceAudio;
+
+  async function generateExpressive(input) {
+    const chunks = splitScript(String(input.get('text')));
+    if (!chunks.length) throw new Error('Enter text to synthesize.');
+    clearInterval(timer);
+    const start = Date.now(), pcm = [];
+    let result;
+    const progress = index => {
+      const value = Math.round(index / chunks.length * 100);
+      bar.style.width = `${value}%`; percent.textContent = `${value}%`;
+      message.textContent = `Generating Bangla section ${index + 1} of ${chunks.length}… Keep this tab open.`;
+      elapsedLabel.textContent = `${Math.floor((Date.now() - start) / 1000)}s elapsed`;
+      steps.forEach((step, i) => step.classList.toggle('active', i < 2));
+    };
+    for (let index = 0; index < chunks.length; index++) {
+      progress(index);
+      const section = new FormData();
+      for (const [key, value] of input) section.append(key, value);
+      section.set('segment_text', chunks[index]);
+      const data = await requestGeneration(section);
+      if (!data.clip) throw new Error('The speech section did not include audio. Please reload and try again.');
+      if (index) pcm.push(new Uint8Array(9600)); // 200 ms pause between sections.
+      pcm.push(readPcm(await data.clip.blob.arrayBuffer()));
+      if (!result) result = data;
+    }
+    const merged = mergePcm(pcm);
+    result.clip.blob = merged.blob;
+    const template = document.createElement('template'); template.innerHTML = result.card_html;
+    const total = Math.round(merged.seconds), minutes = Math.floor(total / 60), seconds = total % 60;
+    template.content.querySelector('.duration-badge').textContent = minutes ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
+    result.card_html = template.innerHTML;
+    result.clip.card_html = result.card_html;
+    return result;
+  }
+
   async function restoreAudio() {
     try {
       const db = await audioDb;
@@ -202,16 +253,9 @@
     button.disabled = true;
     showProgress();
     try {
-      const response = await fetch(form.action || window.location.href, {
-        method: 'POST', body: new FormData(form),
-        headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
-      });
-      const data = await receiveGeneration(response);
-      if (response.status === 422) {
-        const validation = showErrors(data.errors);
-        throw Object.assign(new Error(validation.firstMessage || data.message), {validation});
-      }
-      if (!response.ok || !data.ok) throw new Error(data.message || 'Audio generation failed.');
+      const input = new FormData(form);
+      const data = String(input.get('voice')).endsWith('-parler')
+        ? await generateExpressive(input) : await requestGeneration(input);
       clearInterval(timer); bar.style.width = '100%'; percent.textContent = '100%'; message.textContent = 'Your audio is ready!'; steps.forEach(step => step.classList.add('active'));
       const grid = document.querySelector('#historyGrid');
       grid.insertAdjacentHTML('afterbegin', data.card_html);
