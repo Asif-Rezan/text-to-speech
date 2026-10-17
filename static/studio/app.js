@@ -36,8 +36,16 @@
   }
 
   function updateVoicePrivacy() {
+    const expressive = voice.value.endsWith('-parler');
+    text.maxLength = expressive || voice.value === 'bn_BD-indicvoice-experimental' ? 1000 : 20000;
+    document.querySelector('#charLimit').textContent = text.maxLength.toLocaleString();
+    document.querySelector('#voiceLimitNote').textContent = expressive
+      ? 'ভারতীয় বাংলা উচ্চারণ · একবারে সর্বোচ্চ ১,০০০ অক্ষর। Speaking pace guides the model; exact speed may vary. Free GPU queues can take a little longer.'
+      : 'দীর্ঘ লেখার জন্য Nabanita বা Pradeep বেছে নিন — সর্বোচ্চ ২০,০০০ অক্ষর।';
     const localIndic = voice.value === 'bn_BD-indicvoice-experimental';
-    document.querySelector('#voicePrivacyNote').textContent = localIndic
+    document.querySelector('#voicePrivacyNote').textContent = expressive
+      ? '◆ Expressive Bangla sends your script to AI4Bharat on Hugging Face. Free shared GPU; availability and quotas may vary.'
+      : localIndic
       ? '◆ IndicVoice runs on this server. Experimental Bangla support; up to 1,000 characters.'
       : language.value === 'bn_BD'
         ? '◆ Online Bangla voices send your script to Microsoft. No API key required.'

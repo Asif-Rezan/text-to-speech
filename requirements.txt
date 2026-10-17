@@ -5,10 +5,4 @@ waitress>=3.0; platform_system == "Windows"
 whitenoise>=6.9,<7
 edge-tts>=7.3.1,<8
 miniaudio>=1.71,<2
-# Keep the Linux runtime CPU-only; CUDA wheels cannot fit this deployment.
-torch @ https://download.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl ; sys_platform == 'linux'
-torch==2.6.0 ; sys_platform != 'linux'
-transformers==4.46.3
-spacy>=3.8,<4
-indic-g2p @ https://github.com/Bindkushal/indic-g2p/archive/6bc9ca45fb06955bb19057344ac6a4e400ed4c95.zip
-indic-voice @ https://github.com/Bindkushal/indic-voice/archive/57240e779560e8c3d022836f4191e0db6dff9018.zip
+# Optional local IndicVoice runtime: install requirements-indicvoice.txt separately.

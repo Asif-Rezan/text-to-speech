@@ -37,3 +37,11 @@ Piper voice models can carry independent dataset/model terms. Review the voice's
 - Frontend pinned to `Bindkushal/indic-g2p` commit `6bc9ca45fb06955bb19057344ac6a4e400ed4c95`.
 - Model revision: `2cf8fffbdf72a6fdee5cf841323a161d958b2e0a`; style: `hf_beta`.
 - This app applies compatibility fixes in its adapter, without changing upstream files or model weights.
+
+## AI4Bharat Indic Parler-TTS
+
+Model: https://huggingface.co/ai4bharat/indic-parler-tts (Apache-2.0).
+Public inference demo: https://huggingface.co/spaces/ai4bharat/indic-parler-tts.
+Model weights are not redistributed by this app. Scripts selected for its
+voices are sent to Hugging Face / AI4Bharat. Public demo availability and
+quotas are controlled by its operator.

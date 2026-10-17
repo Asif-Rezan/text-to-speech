@@ -27,7 +27,7 @@ class StudioTests(TestCase):
             with patch('studio.views.synthesize', side_effect=generate):
                 response = self.client.post(reverse('studio:home'), {
                     'text': 'চলুন একটি নতুন গল্প শুনি।', 'language': 'bn_BD',
-                    'voice': INDICVOICE_ID, 'speed': '1', 'format': 'wav',
+                    'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav',
                 }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
                 self.assertEqual(response.status_code, 201)
                 self.assertTrue(response.streaming)
@@ -38,9 +38,9 @@ class StudioTests(TestCase):
 
     def test_indicvoice_is_additional_and_has_its_own_text_limit(self):
         from .services import VOICES
-        self.assertEqual(len(VOICES), 21)
+        self.assertEqual(len(VOICES), 23)
         self.assertEqual(len(ONLINE_VOICES), 4)
-        self.assertEqual(len([v for v, _ in VOICES if v.startswith('bn_BD-')]), 5)
+        self.assertEqual(len([v for v, _ in VOICES if v.startswith('bn_BD-')]), 7)
         values = {'text': 'আমি বাংলায় কথা বলি।', 'language': 'bn_BD',
                   'voice': INDICVOICE_ID, 'speed': '1.00', 'format': 'wav'}
         self.assertTrue(SpeechForm(values).is_valid())
@@ -173,3 +173,53 @@ class StudioTests(TestCase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(SpeechGeneration.objects.get().text, long_text)
+
+
+class ExpressiveBanglaTests(TestCase):
+    def test_bangla_is_default_and_expressive_limit_is_validated(self):
+        form = SpeechForm()
+        self.assertEqual(form.fields['language'].initial, 'bn_BD')
+        self.assertEqual(form.fields['voice'].initial, 'bn_BD-aditi-parler')
+        values = {'text': 'ক' * 1001, 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav'}
+        self.assertIn('text', SpeechForm(values).errors)
+        values['voice'] = 'bn_BD-nabanita-neural'
+        self.assertTrue(SpeechForm(values).is_valid())
+
+    @override_settings(ON_VERCEL=True)
+    def test_vercel_excludes_local_gpu_runtime(self):
+        choices = dict(SpeechForm().fields['voice'].choices)
+        self.assertNotIn(INDICVOICE_ID, choices)
+        self.assertIn('bn_BD-aditi-parler', choices)
+
+    def test_bangla_sentences_without_spaces_still_split(self):
+        chunks = split_text('আমি ভালো আছি।তুমি কেমন আছো? আজ বৃষ্টি হবে।', max_chars=20)
+        self.assertEqual(chunks[0], 'আমি ভালো আছি।')
+        self.assertTrue(all(len(chunk) <= 20 for chunk in chunks))
+
+    @patch('studio.parler.urlopen')
+    def test_gpu_quota_error_is_actionable(self, urlopen):
+        import io
+        from studio.parler import _generate
+        import time
+        urlopen.side_effect = [io.BytesIO(b'{"event_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'),
+                               io.BytesIO(b'event: error\ndata: "quota exceeded"\n\n')]
+        with self.assertRaisesMessage(TTSUnavailable, 'quota is exhausted'):
+            _generate('বাংলা কথা।', 'Aditi', 1, time.monotonic() + 10)
+
+    @patch('studio.parler.urlopen')
+    def test_remote_file_path_cannot_escape_gradio(self, urlopen):
+        import io
+        from studio.parler import _generate
+        import time
+        urlopen.side_effect = [io.BytesIO(b'{"event_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'),
+                               io.BytesIO(b'event: complete\ndata: [{"path":"/etc/passwd"}]\n\n')]
+        with self.assertRaisesMessage(TTSUnavailable, 'did not return audio'):
+            _generate('বাংলা কথা।', 'Aditi', 1, time.monotonic() + 10)
+
+    @patch('studio.parler._generate', side_effect=TimeoutError)
+    def test_failed_expressive_generation_leaves_no_partial_download(self, generate):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'speech.wav'
+            with self.assertRaises(TTSUnavailable):
+                synthesize('বাংলা কথা।', 'bn_BD-aditi-parler', 'bn_BD', 1, output)
+            self.assertFalse(output.exists())

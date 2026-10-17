@@ -1,6 +1,6 @@
 # Neural Voice Studio
 
-A Django text-to-speech studio with sixteen local Piper voices and four online Bangla voices across nine language locales. Local voices use ONNX; Bangla uses Microsoft Edge’s online service through `edge-tts`, without an API key.
+A Django text-to-speech studio with Bangla selected by default. Expressive Bangla uses AI4Bharat Indic Parler-TTS on its public Hugging Face GPU service, without an API key. Bangladesh Microsoft neural voices and sixteen local Piper voices remain available.
 
 ## Setup
 
@@ -71,7 +71,7 @@ compatibility fixes: allowing `bn` and avoiding incomplete English token objects
 The adapter also keeps phonemes joined within each word and uses short chunks to
 avoid the upstream pipeline's silent truncation.
 
-Install `requirements.txt` (Python 3.12). The optional runtime is imported only
+Install `requirements.txt` plus `requirements-indicvoice.txt` (Python 3.12) on a separate CPU/GPU host. This option is hidden on Vercel to keep its runtime small. The optional runtime is imported only
 when this voice is selected. Model assets are pinned to Hugging Face revision
 `2cf8fffbdf72a6fdee5cf841323a161d958b2e0a`, checked by SHA-256 on download, and
 cached under `models/indicvoice` within the runtime directory. No API key is used.
@@ -79,3 +79,34 @@ The experimental option accepts up to 1,000 characters; existing voices retain
 the 20,000-character limit. CPU-only PyTorch is selected on Linux. The function
 bundle requires Vercel large-functions support; do not enable this deployment
 without a real memory and synthesis check on the target runtime.
+
+### Expressive Bangla (default)
+
+**Aditi** (female) and **Arjun** (male) use the actual AI4Bharat
+[Indic Parler-TTS](https://huggingface.co/ai4bharat/indic-parler-tts) model,
+not the Microsoft voices. These are the model author's recommended Bengali
+speakers; their accent is Indian Bengali, not a promised Bangladesh accent.
+The author's native-speaker evaluation reports 86.16 ± 1.85 for Bengali;
+this is not a comparison against ElevenLabs or our own listening evaluation.
+
+Vercel sends the script and a voice description to the author's public
+[Hugging Face Space](https://huggingface.co/spaces/ai4bharat/indic-parler-tts).
+No API key, PyTorch installation, model download, or GPU is needed on Vercel.
+The service is shared and free: queues, quotas, sleeping and upstream changes
+can interrupt availability. It is suitable for trying expressive voices, not
+a guaranteed production inference service. Errors never silently switch models.
+For sustained production traffic, host a dedicated inference service.
+
+Requests accept up to 1,000 characters, split at natural boundaries into
+250-character segments and merged as 24 kHz mono WAV. The pace slider guides
+the model through a slow/moderate/fast prompt; it does not guarantee an exact
+playback-speed multiplier. Longer scripts can use Nabanita or Pradeep.
+Audio is delivered in the original generation response and saved in the browser
+so playback/download survives Vercel instance changes.
+
+Research: IndicF5 supports Bengali but needs permitted reference audio; the
+public demo supplies cross-language references, making accent selection less
+predictable for this app. A newer Bangladesh-specific IndicF5 fine-tune has
+no hosted inference provider and no listening-study evaluation. The checked
+BosonLab Bangla Chatterbox Space was failing to start. None of these findings
+establish a universal best model or ElevenLabs-equivalent quality.

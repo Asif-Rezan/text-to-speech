@@ -95,7 +95,7 @@ def delete(request, public_id):
 @require_GET
 def health(request):
     ready = model_configs_available()
-    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Free Text to Speech', 'voice_count': len(VOICES)}, status=200 if ready else 503)
+    return JsonResponse({'status': 'ok' if ready else 'degraded', 'service': 'Free Text to Speech', 'voice_count': len(SpeechForm().fields['voice'].choices)}, status=200 if ready else 503)
 
 
 @require_GET

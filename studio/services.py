@@ -10,14 +10,19 @@ from pathlib import Path
 
 from django.conf import settings
 
+from .parler import VOICES as PARLER_VOICES
+
 LANGUAGES = [
+    ('bn_BD', 'বাংলা — Bangla'),
     ('en_US', 'English — US'), ('en_GB', 'English — UK'),
     ('es_ES', 'Spanish — Spain'), ('fr_FR', 'French — France'),
     ('de_DE', 'German — Germany'), ('hi_IN', 'Hindi — India'),
     ('pt_BR', 'Portuguese — Brazil'), ('zh_CN', 'Mandarin Chinese'),
-    ('bn_BD', 'বাংলা — Bangla'),
 ]
+
 VOICES = [
+    ('bn_BD-aditi-parler', 'Aditi · বাংলা নারী · Expressive AI'),
+    ('bn_BD-arjun-parler', 'Arjun · বাংলা পুরুষ · Expressive AI'),
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
     ('en_US-hfc_male-medium', 'HFC · US Male'),
     ('en_US-amy-medium', 'Amy · US Female'),
@@ -73,11 +78,11 @@ def model_available(voice='en_US-ljspeech-medium'):
 
 
 def all_models_available():
-    return all(model_available(voice) for voice, _label in VOICES if voice not in ONLINE_VOICES and voice != INDICVOICE_ID)
+    return all(model_available(voice) for voice, _label in VOICES if voice not in ONLINE_VOICES and voice not in PARLER_VOICES and voice != INDICVOICE_ID)
 
 
 def model_configs_available():
-    return all(config_path(voice).is_file() for voice, _label in VOICES if voice not in ONLINE_VOICES and voice != INDICVOICE_ID)
+    return all(config_path(voice).is_file() for voice, _label in VOICES if voice not in ONLINE_VOICES and voice not in PARLER_VOICES and voice != INDICVOICE_ID)
 
 
 def ensure_model(voice_name):
@@ -134,7 +139,7 @@ def split_text(text, max_chars=3500):
     text = text.strip()
     if len(text) <= max_chars:
         return [text] if text else []
-    units = re.split(r'(?<=[.!?।॥。！？])\s+|\n+', text)
+    units = re.split(r'(?<=[।॥。！？])\s*|(?<=[.!?])\s+|\n+', text)
     chunks, current = [], ''
     for unit in filter(None, (unit.strip() for unit in units)):
         if len(unit) > max_chars:
@@ -204,6 +209,9 @@ def synthesize_online(text, voice, speed, output_path):
 
 
 def synthesize(text, voice, language, speed, output_path, audio_format='wav'):
+    if voice in PARLER_VOICES:
+        from .parler import synthesize_parler
+        return synthesize_parler(text, voice, speed, output_path)
     if voice == INDICVOICE_ID:
         from .indicvoice import synthesize_indicvoice
         with _synthesis_lock:
