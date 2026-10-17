@@ -24,7 +24,9 @@ PIPER_BANGLA = 'bn_BD-google-medium'
 STORY_VOICES = {*PARLER_VOICES, PIPER_BANGLA}
 
 VOICES = [
-    (PIPER_BANGLA, 'বাংলা CPU · Piper · No GPU quota'),
+    ('bn_BD-nabanita-neural', 'Nabanita · বাংলাদেশি বাংলা নারী · Online'),
+    ('bn_BD-pradeep-neural', 'Pradeep · বাংলাদেশি বাংলা পুরুষ · Online'),
+    (PIPER_BANGLA, 'বাংলা CPU · Piper · Basic voice'),
     ('bn_BD-aditi-parler', 'Aditi · বাংলা নারী · Expressive AI'),
     ('bn_BD-arjun-parler', 'Arjun · বাংলা পুরুষ · Expressive AI'),
     ('en_US-ljspeech-medium', 'LJ Speech · US Female'),
@@ -43,8 +45,6 @@ VOICES = [
     ('hi_IN-priyamvada-medium', 'Priyamvada · Hindi Female'),
     ('pt_BR-faber-medium', 'Faber · Portuguese Male'),
     ('zh_CN-huayan-medium', 'Huayan · Mandarin Female'),
-    ('bn_BD-nabanita-neural', 'Nabanita · Bangladesh Female · Online'),
-    ('bn_BD-pradeep-neural', 'Pradeep · Bangladesh Male · Online'),
     ('bn_BD-tanishaa-neural', 'Tanishaa · Indian Bengali Female · Online'),
     ('bn_BD-bashkar-neural', 'Bashkar · Indian Bengali Male · Online'),
     ('bn_BD-indicvoice-experimental', 'IndicVoice-82M · Female · Experimental'),

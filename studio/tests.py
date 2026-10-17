@@ -179,7 +179,7 @@ class ExpressiveBanglaTests(TestCase):
     def test_bangla_is_default_and_expressive_limit_is_validated(self):
         form = SpeechForm()
         self.assertEqual(form.fields['language'].initial, 'bn_BD')
-        self.assertEqual(form.fields['voice'].initial, 'bn_BD-google-medium')
+        self.assertEqual(form.fields['voice'].initial, 'bn_BD-nabanita-neural')
         values = {'text': 'ক' * 1001, 'language': 'bn_BD', 'voice': 'bn_BD-aditi-parler', 'speed': '1', 'format': 'wav'}
         self.assertTrue(SpeechForm(values).is_valid())
         values['text'] = 'ক' * 20000

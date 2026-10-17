@@ -1,6 +1,6 @@
 # Neural Voice Studio
 
-A Django text-to-speech studio with CPU Piper Bangla selected by default. Expressive Bangla uses AI4Bharat Indic Parler-TTS on its public Hugging Face GPU service, without an API key. Bangladesh Microsoft neural voices and sixteen local Piper voices remain available.
+A Django text-to-speech studio with Bangladesh Nabanita selected by default. Expressive Bangla uses AI4Bharat Indic Parler-TTS on its public Hugging Face GPU service, without an API key. Bangladesh Microsoft neural voices and sixteen local Piper voices remain available.
 
 ## Setup
 
@@ -149,7 +149,7 @@ without using Vercel scratch disk space. Live deployment tests
 are needed to establish actual runtime behavior on Vercel.
 
 
-### CPU Bangla (default)
+### CPU Bangla (optional)
 
 `bn_BD-google-medium` uses Piper on the application server CPU. The 76.8 MB
 model is downloaded from the upstream Rhasspy collection and cached in /tmp on
